@@ -1,0 +1,9 @@
+*~
+*.o
+tmp*
+a.out
+9cc
+*.s
+test1
+test2
+test1.c
