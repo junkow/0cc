@@ -26,10 +26,19 @@ struct Token {
 Token *token;
 
 // エラーを報告するための関数
-// printfと同じ引数をとる
-void error(char *fmt, ...) {
+// 入力された文字列全体を受け取る変数
+char *user_input;
+
+// エラー箇所を報告
+// 第2引数以下はprintfと同じ引数をとる
+void error_at(char *loc, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
+
+    int pos = loc - user_input;
+    fprintf(stderr, "%s\n", user_input);
+    fprintf(stderr, "%*s", pos, ""); // pos個の空白を入力
+    fprintf(stderr, "^ ");
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
@@ -48,7 +57,7 @@ bool consume(char op) {
 // それ以外の場合にはエラーを返す
 void expect(char op) {
     if (token->kind != TK_RESERVED || token->str[0] != op)
-        error("'%c'ではありません", op);
+        error_at(token->str, "'%c'ではありません", op);
     token = token->next;
 }
 
@@ -56,7 +65,7 @@ void expect(char op) {
 // それ以外の場合にはエラーを返す
 int expect_number() {
     if(token->kind != TK_NUM)
-        error("数ではありません");
+        error_at(token->str, "数ではありません");
     int val = token->val;
     token = token->next;
     return val;
@@ -89,7 +98,9 @@ Token *tokenize(char *p) {
         }
 
         if(*p == '+' || *p == '-') {
-            cur = new_token(TK_RESERVED, cur, p++); // p++あとで調べる
+            cur = new_token(TK_RESERVED, cur, p++); // pの値を入力後pをひとつ進める
+            // cur = new_token(TK_RESERVED, cur, p);
+            // p += 1;
             continue;
         }
 
@@ -99,7 +110,7 @@ Token *tokenize(char *p) {
             continue;
         }
 
-        error("トークナイズできません");
+        error_at(p, "トークナイズできません");
     }
 
     new_token(TK_EOF, cur, p);
@@ -113,7 +124,10 @@ int main(int argc, char **argv) {
     }
 
     // トークナイズする
-    token = tokenize(argv[1]);
+    user_input = argv[1];
+    token = tokenize(user_input);
+    // トークナイズ時点でのエラー('-'、'+', 数値以外の文字が文字列に含まれている場合)
+    // が発生した場合はここでエラーが出力されてexit(1)
 
     // アセンブリの前半部分
     printf(".intel_syntax noprefix\n");
@@ -125,9 +139,11 @@ int main(int argc, char **argv) {
     printf("    mov rax, %d\n", expect_number());
 
     // `+ <数>`あるいは`- <数>`というトークンの並びを消費しつつアセンブリを出力
+    // `<数値>++`など、トークンの並び方にエラーがある場合はここの処理で出力される
     while(!at_eof()) {
         if (consume('+')) {
             printf("    add rax, %d\n", expect_number());
+            continue;
         }
 
         expect('-');
