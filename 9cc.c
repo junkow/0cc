@@ -159,6 +159,7 @@ Node *new_node_num(int value) {
 // 返されるノードの左側の枝のほうが深くなる
 Node *expr();
 Node *mul();
+Node *unary();
 Node *primary();
 
 Node *expr() {
@@ -175,16 +176,26 @@ Node *expr() {
 }
 
 Node *mul() {
-    Node *node = primary();
+    Node *node = unary();
 
     for(;;) {
         if(consume('*'))
-            node = new_node(ND_MUL, node, primary());
+            node = new_node(ND_MUL, node, unary());
         else if(consume('/'))
-            node = new_node(ND_DIV, node, primary());
+            node = new_node(ND_DIV, node, unary());
         else
             return node;
     }
+}
+
+Node *unary() {
+    if(consume('+'))
+        // +xをxに置き換え
+        return primary();
+    if (consume('-'))
+        // -xを0-xに置き換え
+        return new_node(ND_SUB, new_node_num(0), primary());
+    return primary();
 }
 
 Node *primary() {
