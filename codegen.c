@@ -12,10 +12,10 @@ void gen_lval(Node *node) {
 
 // 抽象構文木からアセンブリコードを生成する
 void gen(Node *node) {
-    // switch(node->kind) {
-    // case ND_NUM:
-    //     printf("    push %d\n", node->val);
-    //     return;
+    switch(node->kind) {
+    case ND_NUM:
+        printf("    push %d\n", node->val);
+        return;
     // case ND_LVAR:
     //     gen_lval(node);
     //     printf("    pop rax\n"); // raxにスタックの値をロードする
@@ -31,11 +31,6 @@ void gen(Node *node) {
     //     printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
     //     printf("    push rdi\n"); // rdiの値をスタックにpush
     //     return;
-    // }
-
-    if (node->kind == ND_NUM) {
-        printf("    push %d\n", node->val);
-        return;
     }
 
     gen(node->lhs);
