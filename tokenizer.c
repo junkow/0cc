@@ -1,10 +1,11 @@
 #include "9cc.h"
 
+// main.cではなくtokenizer.cに定義を書く理由は?
 Token *token;
 char *user_input;
 
 // エラーを報告してexitする
-void err(char *fmt, ...) {
+void error(char *fmt, ...) {
 	va_list ap;
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
@@ -30,24 +31,32 @@ void error_at(char *loc, char *fmt, ...) {
 // 次のトークンが期待している記号の時には、トークンを一つ読み進めて真を返す
 // それ以外の場合には偽を返す
 bool consume(char *op) {
-    // 副作用で一つトークンを進める
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
         memcmp(token->str, op, token->len))
         return false;
-    token = token->next;
+    token = token->next; // 副作用で一つトークンを進める
     return true;
 }
+
+// トークンが変数(識別子)の場合
+// bool consume_ident() {
+//     if (token->kind != TK_IDENT || 
+//         ('a' <= *(token->str)  && *(token->str) <= 'z') ||
+//         token->len != 1)
+//         return false;
+//     token = token->next;
+//     return true;
+// }
 
 // 次のトークンが期待している記号の時には、トークンを一つ進めて真を返す
 // それ以外の場合にはエラーを返す
 void expect(char *op) {
-    // 副作用で一つトークンを進める
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
         memcmp(token->str, op, token->len))
         error_at(token->str, "'%c'ではありません", op);
-    token = token->next;
+    token = token->next; // 副作用で一つトークンを進める
 }
 
 // 次のトークンが数値の場合には、トークンを一つ進めて、その数値を返す
@@ -106,6 +115,11 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
             cur = new_token(TK_RESERVED, cur, p++, 1); // pの値を入力後pをひとつ進める
             continue;
         }
+
+        // if('a' <= *p && *p <= 'z') { // ASCIIコード0~127までの数に対してでは文字が割り当てられている
+        //     cur = new_token(TK_IDENT, cur, p++, 1);
+        //     continue;
+        // }
 
         if(isdigit(*p)) {
             cur = new_token(TK_NUM, cur, p, 0);

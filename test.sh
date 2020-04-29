@@ -40,5 +40,11 @@ assert 1 '+201>=+200'
 assert 0 '+201<+200'
 assert 0 '+201<=+200'
 assert 1 '+8*-5<-8+10'
+#assert 42;
+#assert a=b=2;
+#assert a = b = 2;
+#assert a+b;
+#assert a+1=5;
+#assert a + 1 = 5;
 
 echo OK
