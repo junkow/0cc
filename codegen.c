@@ -16,21 +16,21 @@ void gen(Node *node) {
     case ND_NUM:
         printf("    push %d\n", node->val);
         return;
-    // case ND_LVAR:
-    //     gen_lval(node);
-    //     printf("    pop rax\n"); // raxにスタックの値をロードする
-    //     printf("    mov rax, [rax]\n"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
-    //     printf("    push rax\n"); // raxの値をスタックにpush
-    //     return;
-    // case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
-    //     gen_lval(node); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
-    //     gen(node->rhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
+    case ND_LVAR:
+        gen_lval(node);
+        printf("    pop rax\n"); // raxにスタックの値をロードする
+        printf("    mov rax, [rax]\n"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
+        printf("    push rax\n"); // raxの値をスタックにpush
+        return;
+    case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
+        gen_lval(node); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
+        gen(node->rhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
 
-    //     printf("    pop rdi\n"); // スタックの値をrdiにロードする
-    //     printf("    pop rax\n"); // スタックの値をraxにロードする
-    //     printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
-    //     printf("    push rdi\n"); // rdiの値をスタックにpush
-    //     return;
+        printf("    pop rdi\n"); // スタックの値をrdiにロードする
+        printf("    pop rax\n"); // スタックの値をraxにロードする
+        printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
+        printf("    push rdi\n"); // rdiの値をスタックにpush
+        return;
     }
 
     gen(node->lhs);

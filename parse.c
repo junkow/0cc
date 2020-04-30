@@ -27,6 +27,7 @@ static Node *new_node_num(int value) {
 
 // 左結合の演算子をパーズする関数
 // 返されるノードの左側の枝のほうが深くなる
+static Node *assign(void);
 static Node *equality(void);
 static Node *relational(void);
 static Node *add(void);
@@ -57,14 +58,14 @@ Node *expr(void) {
 }
 
 // assign = equality ("=" assign)?
-// static Node *assign(void) {
-//     Node *node = equality();
+static Node *assign(void) {
+    Node *node = equality();
 
-//     if(consume("="))
-//         node = new_binary(ND_ASSIGN, node, assign());
+    if(consume("="))
+        node = new_binary(ND_ASSIGN, node, assign());
 
-//     return node;
-// }
+    return node;
+}
 
 // equality = relational ("==" relational | "!=" relational)*
 static Node *equality() {
