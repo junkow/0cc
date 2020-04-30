@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
     token = tokenize();
     // トークナイズしたものをパースする(抽象構文木の形にする)
     // 結果はToken *code[100];で定義されているcode変数に保存される
-    //program();
+    program();
 
     // アセンブリコード生成
     // アセンブリの前半部分
@@ -31,7 +31,6 @@ int main(int argc, char **argv) {
     printf("    sub rsp, 208\n"); // この時、rspはベースポインタ(rbp)に等しいので、ここから必要なメモリの領域を確保する
     // 関数フレームができる。RSPはスタックトップ(関数フレームの終端位置)を指す
 
-    program();
     // 先頭の式から順にコードを生成
     for (int i = 0; code[i]; i++) {
         // 抽象構文木を降りながらコード生成
