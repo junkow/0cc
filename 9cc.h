@@ -75,10 +75,8 @@ struct Node {
     int offset;    // kindがND_LVARの場合にのみ使う。ベースポインタからのオフセットを表すメンバー
 };
 
-Node *stmt(void);
-// Node *program(void);
-
-//extern Node *code[100];
+Node *program(void);
+extern Node *code[100];
 
 //
 // codegen.c
