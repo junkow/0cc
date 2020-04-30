@@ -27,6 +27,7 @@ static Node *new_node_num(int value) {
 
 // 左結合の演算子をパーズする関数
 // 返されるノードの左側の枝のほうが深くなる
+static Node *expr(void);
 static Node *assign(void);
 static Node *equality(void);
 static Node *relational(void);
@@ -35,25 +36,24 @@ static Node *mul(void);
 static Node *unary(void);
 static Node *primary(void);
 
-
 // program = stmt*
 // Node *program(void) {
 //     int i = 0;
-//     //while(!at_eof())
-//     //    code[i++] = stmt();
+//     while(!at_eof())
+//         code[i++] = stmt();
 
-//     //code[i] = NULL; // 最後のノードはNULLで埋めておくと、どこが末尾かわかるようになる
+//     code[i] = NULL; // 最後のノードはNULLで埋めておくと、どこが末尾かわかるようになる
 // }
 
 // stmt = expr ";"
-// static Node *stmt(void) {
-//     Node *node = expr();
-//     expect(";");
-//     return node;
-// }
+Node *stmt(void) {
+    Node *node = expr();
+    expect(";");
+    return node;
+}
 
 // expr = assign
-Node *expr(void) {
+static Node *expr(void) {
     return equality();
 }
 

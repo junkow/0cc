@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
     // 先頭の式から順にコードを生成
     //for (int i = 0; code[i]; i++) {
         // 抽象構文木を降りながらコード生成
-        Node *node = expr();
+        Node *node = stmt();
         gen(node);
 
         printf("    pop rax\n");
