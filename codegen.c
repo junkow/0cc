@@ -1,13 +1,40 @@
 #include "9cc.h"
 
+// 与えられたアドレスをスタックにpushする
+// static void get_addr(Node *node) {
+//     if(node->kind == ND_LVAR) {
+//         // ローカル変数ならば、オフセット値を取り出してそこから計算したアドレスをstackにpush
+//         int offset = node->offset;
+//         printf("    lea rax, [rbp-%d]\n", offset); // rax <= RBP(関数フレームの基準位置)-offset : stackは下に成長するので値を増やす場合はマイナス
+//         printf("    push rax\n"); // ローカル変数の指すアドレス(raxに保存されている)をスタックにpush
+//         return;
+//     }
+
+//     // ローカル変数ではない場合
+//     error("not an lvalue."); 
+// }
+
+// static void load(void) {
+//     pritnf("    pop rax\n"); // スタックからpopして、その値をraxに保存
+//     printf("    mov rax, [rax]\n"); // raxに保存してある値をメモリアドレスとみなして、そのメモリアドレスから値をロードしてraxにコピーする
+//     printf("    push rax\n"); // raxに保存した値をスタックにpush
+// }
+
+// static void store(void) {
+//     printf("    pop rdi\n"); // スタックからpopして、その値をrdiに保存
+//     printf("    pop rax\n"); // スタックからpopして、その値をraxに保存
+//     printf("    mov [rax], rdi\n"); // raxに保存してある値をメモリアドレスとみなして、そのメモリアドレスにrdiに保存してある値をコピーする
+//     printf("    push rdi\n"); // rdiの値をスタックにpushする
+// }
+
 // 左辺値(ローカル変数)の生成
 void gen_lval(Node *node) {
     if(node->kind != ND_LVAR)
         error("代入の左辺値が変数ではありません");
 
     printf("    mov rax, rbp\n"); // rbpの値をraxにコピーする
-    printf("    sub rax, %d\n", node->offset); // raxからオフセット分マイナスして、メモリスタックを増やす(スタックは上から下に成長する)
-    printf("    push rax\n"); // raxの値をスタックにpushする
+    printf("    sub rax, %d\n", node->offset); // rax-offset: ローカル変数のメモリアドレスを計算して、raxに保存する
+    printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
 }
 
 // 抽象構文木からアセンブリコードを生成する
@@ -18,7 +45,10 @@ void gen(Node *node) {
         return;
     case ND_LVAR:
         gen_lval(node);
-        printf("    pop rax\n"); // raxにスタックの値をロードする
+
+        // メモリアドレスからのデータのload
+        // 上の関数で計算したローカル変数のメモリアドレスをraxから取り出して、そのメモリアドレスから値をレジスタにロードする
+        printf("    pop rax\n"); // スタックからローカル変数のアドレスをpopしてraxに保存する
         printf("    mov rax, [rax]\n"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
         printf("    push rax\n"); // raxの値をスタックにpush
         return;
@@ -26,6 +56,7 @@ void gen(Node *node) {
         gen_lval(node); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
         gen(node->rhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
 
+        // メモリアドレスへのデータのstore
         printf("    pop rdi\n"); // スタックの値をrdiにロードする
         printf("    pop rax\n"); // スタックの値をraxにロードする
         printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
@@ -77,11 +108,6 @@ void gen(Node *node) {
         printf("    cmp rax, rdi\n");
         printf("    setle al\n");
         printf("    movzb rax, al\n");
-        break;
-    case ND_ASSIGN:
-        printf("    mov [rdi], rax");
-        break;
-    case ND_LVAR:
         break;
     }
 
