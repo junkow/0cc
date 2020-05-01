@@ -154,7 +154,7 @@ static Node *primary() {
         // 0-9、a-zは文字コード上で連続している
         // Cでは文字は整数型の単なる小さな値。'a'は97、'0'は48と等価
         // str[0] - 'a'でaから何文字離れているのかがわかる
-        node->offset = (token->str[0] - 'a' + 1) * 8;
+        node->offset = (tok->str[0] - 'a' + 1) * 8;
         return node;
     }
 
