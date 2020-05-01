@@ -21,7 +21,7 @@ typedef enum {
 typedef struct Token Token;
 struct Token {
     TokenKind kind; // トークンの型
-    Token *next;    // 次の入力トークン(連結リストのためのアドレス)
+    Token *next;    // 次の入力トークン(連結リストのためのアドレス) ここでTokenを使っているから上で宣言してる?
     int val;        // kindがTK_NUMの場合、その数値
     char *str;      // トークン文字列
     int len;        // トークン文字列の長さ
@@ -30,7 +30,7 @@ struct Token {
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
 bool consume(char *op);
-bool consume_ident(void);
+Token *consume_ident(void);
 void expect(char *op);
 int expect_number(void);
 bool at_eof(void);
@@ -61,7 +61,7 @@ typedef enum {
     ND_LT,  // <  : less than
     ND_LE,  // <= : less equal
     ND_NUM, // 整数
-    ND_ASSIGN, // assign
+    ND_ASSIGN, // = : assign
     ND_LVAR,   // ローカル変数: local variable
 } NodeKind;
 
@@ -71,8 +71,9 @@ struct Node {
     NodeKind kind; // ノードの型
     Node *lhs;     // 左辺 left-hand side
     Node *rhs;     // 右辺 right-hand side
-    int val;       // kindがND_ALの場合のみ使う
+    int val;       // kindがND_NUMの場合のみ使う
     int offset;    // kindがND_LVARの場合にのみ使う。ベースポインタからのオフセットを表すメンバー
+    char name;     // kindがND_LVARの場合にのみ使う。変数名をtoken->strから作成する
 };
 
 Node *program(void);

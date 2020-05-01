@@ -28,6 +28,8 @@ void error_at(char *loc, char *fmt, ...) {
     exit(1);
 }
 
+// parseの中で呼び出すことでtokenがnodeに変換される
+// トークンはconsume/expect/expect_number関数の呼び出しの中で副作用としてひとつずつ読み進めている
 // 次のトークンが期待している記号の時には、トークンを一つ読み進めて真を返す
 // それ以外の場合には偽を返す
 bool consume(char *op) {
@@ -40,14 +42,13 @@ bool consume(char *op) {
 }
 
 // トークンが変数(識別子)の場合
-// bool consume_ident() {
-//     if (token->kind != TK_IDENT || 
-//         ('a' <= *(token->str)  && *(token->str) <= 'z') ||
-//         token->len != 1)
-//         return false;
-//     token = token->next;
-//     return true;
-// }
+Token *consume_ident() {
+    if (token->kind != TK_IDENT)
+        return NULL;
+    Token *t = token; // アドレスが進める前に、現在のtokenのアドレスを変数に保存しておく
+    token = token->next; // 副作用としてグローバル変数のtokenのアドレスを一つ進める
+    return t; // アドレスが進む前のtokenのアドレスを返すことで、呼び出し先で現在注目しているtokenのプロパティ(token->strなど)を参照することができる
+}
 
 // 次のトークンが期待している記号の時には、トークンを一つ進めて真を返す
 // それ以外の場合にはエラーを返す
@@ -101,6 +102,12 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
             continue;
         }
 
+        // Identifier 識別子
+        if('a' <= *p && *p <= 'z') { // ASCIIコード0~127までの数に対してでは文字が割り当てられている
+            cur = new_token(TK_IDENT, cur, p++, 1);
+            continue;
+        }
+
         // Multi-letter punctuator
         // 複数文字の方を先に書く
         if(startswith(p, "==") || startswith(p, "!=") ||
@@ -111,15 +118,10 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
         }
 
         // Single-letter punctuator
-        if(strchr("+-*/()<>;", *p)) {
+        if(strchr("+-*/()<>;=", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1); // pの値を入力後pをひとつ進める
             continue;
         }
-
-        // if('a' <= *p && *p <= 'z') { // ASCIIコード0~127までの数に対してでは文字が割り当てられている
-        //     cur = new_token(TK_IDENT, cur, p++, 1);
-        //     continue;
-        // }
 
         if(isdigit(*p)) {
             cur = new_token(TK_NUM, cur, p, 0);
@@ -133,5 +135,5 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
     }
 
     new_token(TK_EOF, cur, p, 0);
-    return head.next;
+    return head.next; // 先頭のダミーの次のアドレスなので、目的である先頭のトークンのアドレスを返す
 }

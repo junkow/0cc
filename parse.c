@@ -19,6 +19,12 @@ static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
     return node;
 }
 
+static Node *new_node_var(char name) {
+    Node *node = new_node(ND_LVAR);
+    node->name = name;
+    return node;
+}
+
 static Node *new_node_num(int value) {
     Node *node = new_node(ND_NUM);
     node->val = value;
@@ -55,7 +61,7 @@ static Node *stmt(void) {
 
 // expr = assign
 static Node *expr(void) {
-    return equality();
+    return assign();
 }
 
 // assign = equality ("=" assign)?
@@ -141,17 +147,16 @@ static Node *unary() {
 
 // primary = num | ident | ("(" expr ")")*
 static Node *primary() {
-    // bool tok = consume_ident();
-    // if(tok) {
-    //     Node *node = calloc(1, sizeof(Node));
-    //     node->kind = ND_LVAR;
-    //     // ASCIIコードでは0~127までの数に対して文字が割り当てられている
-    //     // 0-9、a-zは文字コード上で連続している
-    //     // Cでは文字は整数型の単なる小さな値。'a'は97、'0'は48と等価
-    //     // str[0] - 'a'でaから何文字離れているの文字かがわかる
-    //     node->offset = (token->str[0] - 'a' + 1) * 8;
-    //     return node;
-    // }
+    Token *tok = consume_ident();
+    if(tok) {
+        Node *node = new_node_var(*tok->str);
+        // ASCIIコードでは0~127までの数に対して文字が割り当てられている
+        // 0-9、a-zは文字コード上で連続している
+        // Cでは文字は整数型の単なる小さな値。'a'は97、'0'は48と等価
+        // str[0] - 'a'でaから何文字離れているのかがわかる
+        node->offset = (token->str[0] - 'a' + 1) * 8;
+        return node;
+    }
 
     if(consume("(")) { // 次のトークンが"("なら、"(" expr ")"のはず
         Node *node = expr();
