@@ -1,8 +1,8 @@
 #include "9cc.h"
 
-// main.cではなくtokenizer.cに定義を書く理由は?
 Token *token;
 char *user_input;
+LVar *locals; // ローカル変数
 
 // エラーを報告してexitする
 void error(char *fmt, ...) {
@@ -39,6 +39,17 @@ bool consume(char *op) {
         return false;
     token = token->next; // 副作用で一つトークンを進める
     return true;
+}
+
+// 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
+LVar *find_lvar(Token *tok) {
+    for(LVar *var = locals; var != NULL; var=var->next) {
+        if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+            // 変数名がリストから見つかったら、その位置のvar構造体を返す
+            return var;
+        }
+    }
+    return NULL;
 }
 
 // トークンが変数(識別子)の場合
@@ -88,6 +99,10 @@ static bool startswith(char *p, char *q) {
     return memcmp(p, q, strlen(q)) == 0;
 }
 
+static bool is_char(char p) {
+    return ('a' <= p && p <= 'z') || p == '_';
+}
+
 // 入力文字列pをトークナイズしてそれを返す
 Token *tokenize(void) { // グローバル変数を使うので引数はvoidに変更
 	char *p = user_input;
@@ -102,9 +117,13 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
             continue;
         }
 
-        // Identifier 識別子
-        if('a' <= *p && *p <= 'z') { // ASCIIコード0~127までの数に対してでは文字が割り当てられている
-            cur = new_token(TK_IDENT, cur, p++, 1);
+        // Identifier: 識別子
+        if(is_char(*p)) {
+            char *q = p++;
+            while(is_char(*p)) {
+                p++;
+            }
+            cur = new_token(TK_IDENT, cur, q, p-q);
             continue;
         }
 

@@ -150,11 +150,23 @@ static Node *primary() {
     Token *tok = consume_ident();
     if(tok) {
         Node *node = new_node_var(*tok->str);
-        // ASCIIコードでは0~127までの数に対して文字が割り当てられている
-        // 0-9、a-zは文字コード上で連続している
-        // Cでは文字は整数型の単なる小さな値。'a'は97、'0'は48と等価
-        // str[0] - 'a'でaから何文字離れているのかがわかる
-        node->offset = (tok->str[0] - 'a' + 1) * 8;
+        LVar *var = find_lvar(tok); //localvarが既存かどうかをリストから調べる
+        if(var) {
+            // 既存の場合はその変数名のoffset値をnode->offsetに設定
+            node->offset = var->offset;
+        }
+        else {
+            // 新しくローカル変数(lvar構造体)を作成してlocalsリストにつなげる
+            LVar *v = calloc(1, sizeof(LVar));
+            v->next = locals;
+            v->name = tok->str;
+            v->len = strlen(tok->str);
+            v->offset = locals->offset + 8; // 既存の関数フレームに8バイト追加(ローカル変数には8バイト使用すると決めた)
+
+            node->offset = v->offset; // 変数名のoffset値をnode->offsetに設定
+
+            locals = v; // locals変数が常に連結リストの先頭を指すようにする
+        }
         return node;
     }
 
