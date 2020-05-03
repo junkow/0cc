@@ -43,9 +43,7 @@ void gen(Node *node) {
     case ND_NUM:
         printf("    push %d\n", node->val);
         return;
-    case ND_LVAR: // ローカル変数の値の参照
-        // 変数を右辺値として扱う場合
-        // 左辺値として評価
+    case ND_LVAR:
         gen_lval(node);
 
         // スタックトップにある計算結果をアドレスとみなして、そのアドレスから値をロードする
@@ -56,9 +54,8 @@ void gen(Node *node) {
         printf("    push rax\n"); // raxの値をスタックにpush
         return;
     case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
-        // 左側が優先の計算順序なのでノードの左辺から先に生成する
-        gen_lval(node->lhs);
-        gen(node->rhs);
+        gen_lval(node); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
+        gen(node->rhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
 
         // メモリアドレスへのデータのstore
         printf("    pop rdi\n"); // スタックの値をrdiにロードする
@@ -68,7 +65,6 @@ void gen(Node *node) {
         return;
     }
 
-    // 左側が優先の計算順序なのでノードの左辺から先に生成する
     gen(node->lhs);
     gen(node->rhs);
 
