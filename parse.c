@@ -3,15 +3,15 @@
 Node *code[100];
 
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
-// static LVar *find_lvar(Token *tok) {
-//     for(LVar *var = locals; var != NULL; var=var->next) {
-//         if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
-//             // 変数名がリストから見つかったら、その位置のvar構造体を返す
-//             return var;
-//         }
-//     }
-//     return NULL;
-// }
+static LVar *find_lvar(Token *tok) {
+    for(LVar *var = locals; var != NULL; var=var->next) {
+        if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+            // 変数名がリストから見つかったら、その位置のvar構造体を返す
+            return var;
+        }
+    }
+    return NULL;
+}
 
 // 新しいノードを作成する関数
 // 以下の2種類に合わせて関数を二つ用意する
@@ -32,7 +32,7 @@ static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
 
 static Node *new_node_var(LVar *var) {
     Node *node = new_node(ND_LVAR);
-    node->var = var;
+    node->var = var; // nodeとvarの紐付け
     return node;
 }
 
@@ -164,21 +164,23 @@ static Node *primary() {
     if(tok) {
         Node *node = calloc(1, sizeof(Node));
         node->kind = ND_LVAR;
-        node->offset = (tok->str[0] - 'a' + 1) * 8;
-        return node;
+        // node->offset = (tok->str[0] - 'a' + 1) * 8;
+        // return node;
 
-        // LVar *var = find_lvar(tok); //localvarが既存かどうかをリストから調べる
-        // if(!var) {
-        //     // 新しくローカル変数(lvar構造体)を作成してlocalsリストにつなげる
-        //     // var == NULLなので、代入できる
-        //     var = calloc(1, sizeof(LVar));
-        //     var->next = locals;
-        //     var->len = strlen(tok->str);
-        //     var->offset = locals->offset + 8;
-        //     locals = var; // locals変数が常に連結リストの先頭を指すようにする
-        // }
+        LVar *var = find_lvar(tok); //localvarが既存かどうかをリストから調べる
+        if(!var) {
+            // 新しくローカル変数(lvar構造体)を作成してlocalsリストにつなげる
+            // var == NULLなので、そのまま代入できる
+            var = calloc(1, sizeof(LVar));
+            var->next = locals;
+            var->len = strlen(tok->str);
+            var->name = tok->str;
+            // var->offset = locals->offset + 8;
+            var->offset = (tok->str[0] - 'a' + 1) * 8;
+            locals = var; // locals変数が常に連結リストの先頭を指すようにする
+        }
 
-        // return new_node_var(var);
+        return new_node_var(var);
     }
 
     if(consume("(")) { // 次のトークンが"("なら、"(" expr ")"のはず

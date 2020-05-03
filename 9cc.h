@@ -85,8 +85,9 @@ struct Node {
     Node *lhs;     // 左辺 left-hand side
     Node *rhs;     // 右辺 right-hand side
     LVar *var;     // kind == ND_LVAR
-    int offset;    // kind == ND_LVAR
     int val;       // kind == ND_NUM
+    int offset;    // kind == ND_LVAR
+    char name;     // kind == ND_LVAR
 };
 
 Node *program(void);

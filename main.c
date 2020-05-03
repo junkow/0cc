@@ -11,7 +11,14 @@ int main(int argc, char **argv) {
     token = tokenize();
     // トークナイズしたものをパースする(抽象構文木の形にする)
     // 結果はToken *code[100];で定義されているcode変数に保存される
-    program();
+    program(); // locals連結リストが作成される
+
+    // ローカル変数にオフセットを割り当て
+    // int offset = 0;
+    // for(LVar *var = locals; var; var->next) {
+    //     offset += 8;
+    //     var->offset = offset;
+    // }
 
     // アセンブリコード生成
     // アセンブリの前半部分
