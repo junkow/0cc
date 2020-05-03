@@ -18,10 +18,10 @@ assert() {
 
 # ローカル変数の実行(アルファベット一文字)
 assert 0 'a;'
-# assert 2 'a=2; a;'
-# assert 2 'a=b=2; a;'
-# assert 2 'a = b = 2; b;'
-# assert 0 'a+b; a;'
+assert 2 'a=2; a;'
+assert 2 'a=b=2; a;'
+assert 2 'a = b = 2; b;'
+assert 0 'a+b; a;'
 # assert 0 'a+1=5;' #代入の左辺値が変数ではありませんのエラー
 # 複数の式の場合、最後の行の実行結果が出力に反映される
 assert 1 '+8*-5<-8+10; +8*-5<-8+10;'

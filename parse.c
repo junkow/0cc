@@ -164,8 +164,6 @@ static Node *primary() {
     if(tok) {
         Node *node = calloc(1, sizeof(Node));
         node->kind = ND_LVAR;
-        // node->offset = (tok->str[0] - 'a' + 1) * 8;
-        // return node;
 
         LVar *var = find_lvar(tok); //localvarが既存かどうかをリストから調べる
         if(!var) {

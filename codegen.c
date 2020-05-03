@@ -5,10 +5,10 @@ void gen_lval(Node *node) {
     if(node->kind != ND_LVAR)
         error("代入の左辺値が変数ではありません");
 
-    //printf("    mov rax, rbp\n"); // rbpの値をraxにコピーする
-    //printf("    sub rax, %d\n", node->var->offset); // (rax - offset): ローカル変数のメモリアドレスを計算して、raxに保存する
-    int offset = (node->name - 'a' + 1) * 8;
-    printf("    lea rax, [rbp-%d]\n", offset);
+    // int offset = (node->name - 'a' + 1) * 8;
+    // printf("    lea rax, [rbp-%d]\n", offset);
+    printf("    mov rax, rbp\n"); // rbpの値をraxにコピーする
+    printf("    sub rax, %d\n", node->var->offset); // (rax - offset): ローカル変数のメモリアドレスを計算して、raxに保存する
     printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
 }
 
