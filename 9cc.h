@@ -84,7 +84,6 @@ struct Node {
     NodeKind kind; // ノードの型
     Node *lhs;     // 左辺 left-hand side
     Node *rhs;     // 右辺 right-hand side
-    char name;     // kindがND_LVARの場合にのみ使う。変数名をtoken->strから作成する
     LVar *var;     // kindがND_LVARの場合にのみ使う。
     int val;       // kindがND_NUMの場合のみ使う
 };

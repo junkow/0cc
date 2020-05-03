@@ -167,7 +167,6 @@ static Node *primary() {
             // 新しくローカル変数(lvar構造体)を作成してlocalsリストにつなげる
             LVar *v = calloc(1, sizeof(LVar));
             v->next = locals;
-            v->name = tok->str;
             v->len = strlen(tok->str);
             locals = v; // locals変数が常に連結リストの先頭を指すようにする
         }
