@@ -84,8 +84,9 @@ struct Node {
     NodeKind kind; // ノードの型
     Node *lhs;     // 左辺 left-hand side
     Node *rhs;     // 右辺 right-hand side
-    LVar *var;     // kindがND_LVARの場合にのみ使う。
-    int val;       // kindがND_NUMの場合のみ使う
+    LVar *var;     // kind == ND_LVAR
+    int offset;    // kind == ND_LVAR
+    int val;       // kind == ND_NUM
 };
 
 Node *program(void);

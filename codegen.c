@@ -6,7 +6,7 @@ void gen_lval(Node *node) {
         error("代入の左辺値が変数ではありません");
 
     printf("    mov rax, rbp\n"); // rbpの値をraxにコピーする
-    printf("    sub rax, %d\n", node->var->offset); // rax-offset: ローカル変数のメモリアドレスを計算して、raxに保存する
+    printf("    sub rax, %d\n", node->offset); // (rax - offset): ローカル変数のメモリアドレスを計算して、raxに保存する
     printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
 }
 
@@ -27,7 +27,7 @@ void gen(Node *node) {
         printf("    push rax\n"); // raxの値をスタックにpush
         return;
     case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
-        gen_lval(node); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
+        gen_lval(node->lhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
         gen(node->rhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
 
         // メモリアドレスへのデータのstore

@@ -13,13 +13,6 @@ int main(int argc, char **argv) {
     // 結果はToken *code[100];で定義されているcode変数に保存される
     program();
 
-    // Assign offsets to local variables.
-    int offset = 0;
-    for(LVar *var = locals; var; var = var->next) {
-        offset += 8;
-        var->offset = offset;
-    }
-
     // アセンブリコード生成
     // アセンブリの前半部分
     printf(".intel_syntax noprefix\n");
@@ -29,14 +22,14 @@ int main(int argc, char **argv) {
     // prologue
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-    printf("    sub rsp, %d\n", offset);
+    printf("    sub rsp, %d\n", 208); // 予めa-zまでの変数のスペースを確保しておく
 
     // 先頭の式から順にコードを生成
     for (int i = 0; code[i]; i++) {
         // 抽象構文木を降りながらコード生成
         gen(code[i]);
 
-        // 式の評価結果としてスタックに一つの値が残っているはずなので
+        // 式の評価結果としてスタックに一つの値が残っているはずなので(gen関数の最後の一行)
         // スタックが溢れないようにpopしておく
         printf("    pop rax\n"); // スタックから値をpopしてraxレジスタにロードする
     }
