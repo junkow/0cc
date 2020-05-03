@@ -108,12 +108,11 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
 
         // Identifier: 識別子
         if(is_char(*p)) {
-            // char *q = p++;
-            // while(is_char(*p)) {
-            //     p++;
-            // }
-            // cur = new_token(TK_IDENT, cur, q, p-q);
-            cur = new_token(TK_IDENT, cur, p++, 1);
+            char *q = p++;
+            while(is_char(*p)) {
+                p++;
+            }
+            cur = new_token(TK_IDENT, cur, q, p-q);
             continue;
         }
 
