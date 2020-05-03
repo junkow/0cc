@@ -13,6 +13,13 @@ int main(int argc, char **argv) {
     // 結果はToken *code[100];で定義されているcode変数に保存される
     program();
 
+    // Assign offsets to local variables.
+    int offset = 0;
+    for(LVar *var = locals; var; var = var->next) {
+        offset += 8;
+        var->offset = offset;
+    }
+
     // アセンブリコード生成
     // アセンブリの前半部分
     printf(".intel_syntax noprefix\n");
@@ -20,16 +27,9 @@ int main(int argc, char **argv) {
     printf("main:\n");
 
     // prologue
-    // 変数26個分の領域を確保する 26*8(バイト) = 208バイト
-    // rbp: ベースレジスタ(値はベースポインタ)
-    // rsp: スタックポインタ
-    // スタックは下に成長するのでsub(減算)になる
-    // call命令によってリターンアドレスがスタックに詰まれている状態
-    printf("    push rbp\n");     // rbpの値(ベースポインタ)をメモリスタックにpush
-    // スタックには関数呼び出し時点での関数フレーム開始位置が詰まれる
-    printf("    mov rbp, rsp\n"); // rbpにrspの値をコピー(rbpはスタックトップに移動)
-    printf("    sub rsp, 208\n"); // この時、rspはベースポインタ(rbp)に等しいので、ここから必要なメモリの領域を確保する
-    // 関数フレームができる。RSPはスタックトップ(関数フレームの終端位置)を指す
+    printf("    push rbp\n");
+    printf("    mov rbp, rsp\n");
+    printf("    sub rsp, %d\n", offset);
 
     // 先頭の式から順にコードを生成
     for (int i = 0; code[i]; i++) {
@@ -43,9 +43,9 @@ int main(int argc, char **argv) {
 
     // epilogue
     // 最後の式の結果がRAXに残っているので、それをRBPにロードして関数からの返り値とする
-    printf("    mov rsp, rbp\n"); // rspにrbpの値をコピー(RSPの指す位置をRBPと同じ位置に戻す)
-    printf("    pop rbp\n");      // スタックの値をrbpにロードする=>rbpは一つ前の関数呼び出し時点の関数フレーム開始位置に移動する
-    printf("    ret\n");          // 現在の関数のリターンアドレスをポップして、そのアドレスにジャンプする
+    printf("    mov rsp, rbp\n");
+    printf("    pop rbp\n");
+    printf("    ret\n");
 
     return 0;
 }

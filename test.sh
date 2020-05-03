@@ -17,7 +17,7 @@ assert() {
 }
 
 # ローカル変数の実行(アルファベット一文字)
-# assert 0 'a;'
+assert 0 'a;'
 # assert 2 'a=2; a;'
 # assert 2 'a=b=2; a;'
 # assert 2 'a = b = 2; b;'

@@ -2,6 +2,17 @@
 
 Node *code[100];
 
+// 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
+static LVar *find_lvar(Token *tok) {
+    for(LVar *var = locals; var != NULL; var=var->next) {
+        if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+            // 変数名がリストから見つかったら、その位置のvar構造体を返す
+            return var;
+        }
+    }
+    return NULL;
+}
+
 // 新しいノードを作成する関数
 // 以下の2種類に合わせて関数を二つ用意する
 // - 左辺と右辺を受け取る2項演算子
@@ -19,9 +30,9 @@ static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
     return node;
 }
 
-static Node *new_node_var(char name) {
+static Node *new_node_var(LVar *var) {
     Node *node = new_node(ND_LVAR);
-    node->name = name;
+    node->var = var;
     return node;
 }
 
@@ -46,6 +57,8 @@ static Node *primary(void);
 // program = stmt*
 Node *program(void) {
     int i = 0;
+    locals = NULL;
+
     while(!at_eof())
         code[i++] = stmt();
 
@@ -149,25 +162,16 @@ static Node *unary() {
 static Node *primary() {
     Token *tok = consume_ident();
     if(tok) {
-        Node *node = new_node_var(*tok->str);
         LVar *var = find_lvar(tok); //localvarが既存かどうかをリストから調べる
-        if(var) {
-            // 既存の場合はその変数名のoffset値をnode->offsetに設定
-            node->offset = var->offset;
-        }
-        else {
+        if(!var) {
             // 新しくローカル変数(lvar構造体)を作成してlocalsリストにつなげる
             LVar *v = calloc(1, sizeof(LVar));
             v->next = locals;
             v->name = tok->str;
             v->len = strlen(tok->str);
-            v->offset = locals->offset + 8; // 既存の関数フレームに8バイト追加(ローカル変数には8バイト使用すると決めた)
-
-            node->offset = v->offset; // 変数名のoffset値をnode->offsetに設定
-
             locals = v; // locals変数が常に連結リストの先頭を指すようにする
         }
-        return node;
+        return new_node_var(var);
     }
 
     if(consume("(")) { // 次のトークンが"("なら、"(" expr ")"のはず

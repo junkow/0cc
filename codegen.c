@@ -4,11 +4,11 @@
 // static void get_addr(Node *node) {
 //     if(node->kind == ND_LVAR) {
 //         // ローカル変数ならば、オフセット値を取り出してそこから計算したアドレスをstackにpush
-//         int offset = node->offset;
-//         printf("    lea rax, [rbp-%d]\n", offset); // rax <= RBP(関数フレームの基準位置)-offset : stackは下に成長するので値を増やす場合はマイナス
+//         printf("    lea rax, [rbp-%d]\n", node->var->offset); // rax <= RBP(関数フレームの基準位置)-offset : stackは下に成長するので値を増やす場合はマイナス
 //         printf("    push rax\n"); // ローカル変数の指すアドレス(raxに保存されている)をスタックにpush
 //         return;
 //     }
+// }
 
 //     // ローカル変数ではない場合
 //     error("not an lvalue."); 
@@ -33,7 +33,7 @@ void gen_lval(Node *node) {
         error("代入の左辺値が変数ではありません");
 
     printf("    mov rax, rbp\n"); // rbpの値をraxにコピーする
-    printf("    sub rax, %d\n", node->offset); // rax-offset: ローカル変数のメモリアドレスを計算して、raxに保存する
+    printf("    sub rax, %d\n", node->var->offset); // rax-offset: ローカル変数のメモリアドレスを計算して、raxに保存する
     printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
 }
 

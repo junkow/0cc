@@ -41,17 +41,6 @@ bool consume(char *op) {
     return true;
 }
 
-// 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
-LVar *find_lvar(Token *tok) {
-    for(LVar *var = locals; var != NULL; var=var->next) {
-        if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
-            // 変数名がリストから見つかったら、その位置のvar構造体を返す
-            return var;
-        }
-    }
-    return NULL;
-}
-
 // トークンが変数(識別子)の場合
 Token *consume_ident() {
     if (token->kind != TK_IDENT)
@@ -100,7 +89,7 @@ static bool startswith(char *p, char *q) {
 }
 
 static bool is_char(char p) {
-    return ('a' <= p && p <= 'z') || p == '_';
+    return ('a' <= p && p <= 'z');
 }
 
 // 入力文字列pをトークナイズしてそれを返す
@@ -119,11 +108,12 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
 
         // Identifier: 識別子
         if(is_char(*p)) {
-            char *q = p++;
-            while(is_char(*p)) {
-                p++;
-            }
-            cur = new_token(TK_IDENT, cur, q, p-q);
+            // char *q = p++;
+            // while(is_char(*p)) {
+            //     p++;
+            // }
+            // cur = new_token(TK_IDENT, cur, q, p-q);
+            cur = new_token(TK_IDENT, cur, p++, 1);
             continue;
         }
 
