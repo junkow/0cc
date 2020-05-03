@@ -1,32 +1,5 @@
 #include "9cc.h"
 
-// 与えられたアドレスをスタックにpushする
-// static void get_addr(Node *node) {
-//     if(node->kind == ND_LVAR) {
-//         // ローカル変数ならば、オフセット値を取り出してそこから計算したアドレスをstackにpush
-//         printf("    lea rax, [rbp-%d]\n", node->var->offset); // rax <= RBP(関数フレームの基準位置)-offset : stackは下に成長するので値を増やす場合はマイナス
-//         printf("    push rax\n"); // ローカル変数の指すアドレス(raxに保存されている)をスタックにpush
-//         return;
-//     }
-// }
-
-//     // ローカル変数ではない場合
-//     error("not an lvalue."); 
-// }
-
-// static void load(void) {
-//     pritnf("    pop rax\n"); // スタックからpopして、その値をraxに保存
-//     printf("    mov rax, [rax]\n"); // raxに保存してある値をメモリアドレスとみなして、そのメモリアドレスから値をロードしてraxにコピーする
-//     printf("    push rax\n"); // raxに保存した値をスタックにpush
-// }
-
-// static void store(void) {
-//     printf("    pop rdi\n"); // スタックからpopして、その値をrdiに保存
-//     printf("    pop rax\n"); // スタックからpopして、その値をraxに保存
-//     printf("    mov [rax], rdi\n"); // raxに保存してある値をメモリアドレスとみなして、そのメモリアドレスにrdiに保存してある値をコピーする
-//     printf("    push rdi\n"); // rdiの値をスタックにpushする
-// }
-
 // 左辺値(ローカル変数)の生成
 void gen_lval(Node *node) {
     if(node->kind != ND_LVAR)
