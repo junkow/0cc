@@ -57,7 +57,7 @@ static Node *primary(void);
 // program = stmt*
 Node *program(void) {
     int i = 0;
-    locals = NULL;
+    locals = NULL; // locals変数を初期化
 
     while(!at_eof())
         code[i++] = stmt();
@@ -162,12 +162,16 @@ static Node *unary() {
 static Node *primary() {
     Token *tok = consume_ident();
     if(tok) {
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_LVAR;
+
         LVar *var = find_lvar(tok); //localvarが既存かどうかをリストから調べる
         if(!var) {
             // 新しくローカル変数(lvar構造体)を作成してlocalsリストにつなげる
             LVar *v = calloc(1, sizeof(LVar));
             v->next = locals;
             v->len = strlen(tok->str);
+            v->offset = locals->offset + 8;
             locals = v; // locals変数が常に連結リストの先頭を指すようにする
         }
         return new_node_var(var);
