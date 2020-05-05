@@ -179,7 +179,7 @@ static Node *primary() {
             var->next = locals;
             var->len = strlen(tok->str);
             var->name = tok->str;
-            var->offset = locals->offset + 8;
+            //var->offset = locals->offset + 8; // main.c関数内で行っている
             //var->offset = (tok->str[0] - 'a' + 1) * 8;
             locals = var; // locals変数が常に連結リストの先頭を指すようにする
         }

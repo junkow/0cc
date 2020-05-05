@@ -1,13 +1,27 @@
 #include "9cc.h"
 
-// 左辺値(ローカル変数)の生成
-void gen_lval(Node *node) {
-    if(node->kind != ND_LVAR)
-        error("代入の左辺値が変数ではありません");
+// ローカル変数のアドレスの取得
+static void gen_addr(Node *node) {
+    if(node->kind == ND_LVAR) {
+        printf("    lea rax, [rbp-%d]\n", node->var->offset); // lea : load effective address
+        printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
+        return;
+    }
 
-    // int offset = (node->name - 'a' + 1) * 8;
-    printf("    lea rax, [rbp-%d]\n", node->var->offset); // lea : load effective address
-    printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
+    error("代入の左辺値が変数ではありません");
+}
+
+static void load(void) {
+    printf("    pop rax\n"); // スタックからローカル変数のアドレスをpopしてraxに保存する
+    printf("    mov rax, [rax]\n"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
+    printf("    push rax\n"); // raxの値をスタックにpush
+}
+
+static void store(void) {
+    printf("    pop rdi\n"); // スタックの値をrdiにロードする
+    printf("    pop rax\n"); // スタックの値をraxにロードする
+    printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
+    printf("    push rdi\n"); // rdiの値をスタックにpush
 }
 
 // 抽象構文木からアセンブリコードを生成する
@@ -16,25 +30,18 @@ void gen(Node *node) {
     case ND_NUM:
         printf("    push %d\n", node->val);
         return;
-    case ND_LVAR:
-        gen_lval(node);
+    case ND_LVAR: // 変数の値の参照
+        gen_addr(node);
 
-        // スタックトップにある計算結果をアドレスとみなして、そのアドレスから値をロードする
-        // メモリアドレスからのデータのload
-        // 上の関数で計算したローカル変数のメモリアドレスをraxから取り出して、そのメモリアドレスから値をレジスタにロードする
-        printf("    pop rax\n"); // スタックからローカル変数のアドレスをpopしてraxに保存する
-        printf("    mov rax, [rax]\n"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
-        printf("    push rax\n"); // raxの値をスタックにpush
+        // メモリアドレスからデータをレジスタにload
+        load();
         return;
     case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
-        gen_lval(node->lhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
+        gen_addr(node->lhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
         gen(node->rhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
 
         // メモリアドレスへのデータのstore
-        printf("    pop rdi\n"); // スタックの値をrdiにロードする
-        printf("    pop rax\n"); // スタックの値をraxにロードする
-        printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
-        printf("    push rdi\n"); // rdiの値をスタックにpush
+        store();
         return;
     }
 
