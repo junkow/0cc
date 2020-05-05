@@ -56,7 +56,7 @@ void expect(char *op) {
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
         memcmp(token->str, op, token->len))
-        error_at(token->str, "'%c'ではありません", op);
+        error_at(token->str, "expected \"%s\"", op);
     token = token->next; // 副作用で一つトークンを進める
 }
 
@@ -103,6 +103,12 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
         // 空白文字をスキップ
         if (isspace(*p)) {
             p++;
+            continue;
+        }
+
+        if(startswith(p, "return")) {
+            cur = new_token(TK_RETURN, cur, p, 6);
+            p += 6;
             continue;
         }
 

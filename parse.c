@@ -1,12 +1,13 @@
 #include "9cc.h"
 
-Node *code[100];
+// Node *code[100];
+Node *node;
 
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
 static LVar *find_lvar(Token *tok) {
-    for(LVar *var = locals; var != NULL; var=var->next) {
+    for(LVar *var = locals; var; var=var->next) {
         if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
-            // 変数名がリストから見つかったら、その位置のvar構造体を返す
+            // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
             return var;
         }
     }
@@ -32,7 +33,7 @@ static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
 
 static Node *new_node_var(LVar *var) {
     Node *node = new_node(ND_LVAR);
-    node->var = var; // nodeとvarの紐付け
+    node->var = var;
     return node;
 }
 
@@ -59,10 +60,12 @@ Node *program(void) {
     int i = 0;
     locals = NULL; // locals変数を初期化
 
-    while(!at_eof())
-        code[i++] = stmt();
+    return stmt();
 
-    code[i] = NULL; // 最後のノードはNULLで埋めておくと、どこが末尾かわかるようになる
+    // while(!at_eof())
+    //     code[i++] = stmt();
+
+    // code[i] = NULL; // 最後のノードはNULLで埋めておくと、どこが末尾かわかるようになる
 }
 
 // stmt = expr ";"
@@ -179,11 +182,11 @@ static Node *primary() {
             var->next = locals;
             var->len = strlen(tok->str);
             var->name = tok->str;
-            //var->offset = locals->offset + 8; // main.c関数内で行っている
-            //var->offset = (tok->str[0] - 'a' + 1) * 8;
+            var->offset = locals->offset + 8;
             locals = var; // locals変数が常に連結リストの先頭を指すようにする
         }
 
+         // nodeとvarの紐付け
         return new_node_var(var);
     }
 
