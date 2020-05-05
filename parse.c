@@ -160,6 +160,12 @@ static Node *unary() {
 
 // primary = num | ident | ("(" expr ")")*
 static Node *primary() {
+    if(consume("(")) { // 次のトークンが"("なら、"(" expr ")"のはず
+        Node *node = expr();
+        expect(")");
+        return node;
+    }
+
     Token *tok = consume_ident();
     if(tok) {
         Node *node = calloc(1, sizeof(Node));
@@ -173,18 +179,12 @@ static Node *primary() {
             var->next = locals;
             var->len = strlen(tok->str);
             var->name = tok->str;
-            //var->offset = locals->offset + 8; // segmentation faultこのコードが問題!!
-            var->offset = (tok->str[0] - 'a' + 1) * 8;
+            var->offset = locals->offset + 8;
+            //var->offset = (tok->str[0] - 'a' + 1) * 8;
             locals = var; // locals変数が常に連結リストの先頭を指すようにする
         }
 
         return new_node_var(var);
-    }
-
-    if(consume("(")) { // 次のトークンが"("なら、"(" expr ")"のはず
-        Node *node = expr();
-        expect(")");
-        return node;
     }
 
     // それ以外なら数値

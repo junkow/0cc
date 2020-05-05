@@ -14,11 +14,11 @@ int main(int argc, char **argv) {
     program(); // locals連結リストが作成される
 
     // ローカル変数にオフセットを割り当て
-    // int offset = 0;
-    // for(LVar *var = locals; var; var->next) {
-    //     offset += 8;
-    //     var->offset = offset;
-    // }
+    int offset = 0;
+    for(LVar *var = locals; var; var->next) {
+        offset += 8;
+        var->offset = offset;
+    }
 
     // アセンブリコード生成
     // アセンブリの前半部分
@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
     // prologue
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-    printf("    sub rsp, %d\n", 208); // 予めa-zまでの変数のスペースを確保しておく
+    printf("    sub rsp, %d\n", offset); // 予めa-zまでの変数のスペースを確保しておく
 
     // 先頭の式から順にコードを生成
     for (int i = 0; code[i]; i++) {

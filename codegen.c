@@ -6,9 +6,6 @@ void gen_lval(Node *node) {
         error("代入の左辺値が変数ではありません");
 
     // int offset = (node->name - 'a' + 1) * 8;
-    // printf("    lea rax, [rbp-%d]\n", offset);
-    //printf("    mov rax, rbp\n"); // rbpの値をraxにコピーする
-    //printf("    sub rax, %d\n", node->var->offset); // (rax - offset): ローカル変数のメモリアドレスを計算して、raxに保存する
     printf("    lea rax, [rbp-%d]\n", node->var->offset); // lea : load effective address
     printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
 }
