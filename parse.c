@@ -1,7 +1,6 @@
 #include "9cc.h"
 
-// Node *code[100];
-Node *node;
+Node *code[100];
 
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
 static LVar *find_lvar(Token *tok) {
@@ -60,17 +59,22 @@ Node *program(void) {
     int i = 0;
     locals = NULL; // locals変数を初期化
 
-    return stmt();
+    while(!at_eof())
+        code[i++] = stmt();
 
-    // while(!at_eof())
-    //     code[i++] = stmt();
-
-    // code[i] = NULL; // 最後のノードはNULLで埋めておくと、どこが末尾かわかるようになる
+    code[i] = NULL; // 最後のノードはNULLで埋めておくと、どこが末尾かわかるようになる
 }
 
-// stmt = expr ";"
+// stmt = expr ";" | "return" expr ";"
 static Node *stmt(void) {
-    Node *node = expr();
+    Node *node;
+    if(consume("return"))
+        node = new_node(ND_RETURN);
+        node->lhs = expr();
+        expect(";");
+        return node;
+
+    node = expr();
     expect(";");
     return node;
 }
@@ -182,7 +186,7 @@ static Node *primary() {
             var->next = locals;
             var->len = strlen(tok->str);
             var->name = tok->str;
-            var->offset = locals->offset + 8;
+            // var->offset = locals->offset + 8; // main.cで行っている
             locals = var; // locals変数が常に連結リストの先頭を指すようにする
         }
 

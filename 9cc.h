@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -15,7 +16,6 @@ typedef enum {
     TK_IDENT,    // 識別子
     TK_NUM,      // 整数トークン
     TK_EOF,      // 入力の終わりを表すトークン
-    TK_RETURN,   // return
 } TokenKind;
 
 // トークン型
@@ -38,8 +38,8 @@ struct LVar {
     int offset;     // RBPからのオフセット
 };
 
-// ローカル変数
-extern struct LVar *locals;
+// ローカル変数管理のための変数
+extern LVar *locals;
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
@@ -50,8 +50,6 @@ int expect_number(void);
 bool at_eof(void);
 
 Token *tokenize(void);
-
-// global variables
 
 // 現在着目しているトークン
 extern Token *token;
@@ -91,8 +89,7 @@ struct Node {
 };
 
 Node *program(void);
-// extern Node *code[100];
-extern Node *node;
+extern Node *code[100];
 
 //
 // codegen.c

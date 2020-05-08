@@ -43,6 +43,15 @@ void gen(Node *node) {
         // メモリアドレスへのデータのstore
         store();
         return;
+    case ND_RETURN:
+        gen(node->lhs); // returnの返り値になっている式のコードが出力される
+
+        // 関数呼び出し元に戻る
+        printf("    pop rax\n"); // スタックから値をpopしてraxにセットする
+        printf("    mov rsp, rbp\n"); // rbpをrspの位置に
+        printf("    pop rbp\n"); // RBPがひとつまえの関数フレームの開始位置を指す
+        printf("    ret\n"); // リターンアドレスをpopして、そのアドレスにジャンプする
+        return;
     }
 
     gen(node->lhs);
