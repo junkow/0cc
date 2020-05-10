@@ -1,7 +1,5 @@
 #include "9cc.h"
 
-Node *code[100];
-
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
 static LVar *find_lvar(Token *tok) {
     for(LVar *var = locals; var; var=var->next) {
