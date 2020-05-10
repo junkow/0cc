@@ -30,6 +30,12 @@ static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
     return node;
 }
 
+static Node *new_unary(NodeKind kind, Node *lhs) {
+    Node *node = new_node(kind);
+    node->lhs = lhs;
+    return node;
+}
+
 static Node *new_node_var(LVar *var) {
     Node *node = new_node(ND_LVAR);
     node->var = var;
@@ -70,14 +76,12 @@ Node *program(void) {
 // stmt = expr ";" | "return" expr ";"
 static Node *stmt(void) {
     if(consume("return")) {
-        Node *node = new_node(ND_RETURN);
-        node->lhs = expr();
+        Node *node = new_unary(ND_RETURN, expr());
         expect(";");
         return node;
     }
 
-    Node *node = new_node(ND_EXPR_STMT);
-    node->lhs = expr();
+    Node *node = new_unary(ND_EXPR_STMT, expr());
     expect(";");
     return node;
 }
@@ -178,8 +182,7 @@ static Node *primary() {
 
     Token *tok = consume_ident();
     if(tok) {
-        Node *node = calloc(1, sizeof(Node));
-        node->kind = ND_LVAR;
+        Node *node = new_node(ND_LVAR);
 
         LVar *var = find_lvar(tok); //localvarが既存かどうかをリストから調べる
         if(!var) {
