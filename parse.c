@@ -36,11 +36,12 @@ static Node *new_unary(NodeKind kind, Node *lhs) {
 
 static Node *new_node_var(LVar *var) {
     Node *node = new_node(ND_LVAR);
+    node->name = *(var->name);
     node->var = var;
     return node;
 }
 
-static Node *new_node_num(int value) {
+static Node *new_node_num(long value) {
     Node *node = new_node(ND_NUM);
     node->val = value;
     return node;

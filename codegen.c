@@ -3,7 +3,8 @@
 // ローカル変数のアドレスの取得
 static void gen_addr(Node *node) {
     if(node->kind == ND_LVAR) {
-        printf("    lea rax, [rbp-%d]\n", node->var->offset); // lea : load effective address
+        int offset = (node->name - 'a' + 1) * 8;
+        printf("    lea rax, [rbp-%d]\n", offset); // lea : load effective address
         printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
         return;
     }
@@ -25,24 +26,24 @@ static void store(void) {
 }
 
 // 抽象構文木からアセンブリコードを生成する
-void gen(Node *node) {
+static void gen(Node *node) {
     switch(node->kind) {
     case ND_NUM:
-        printf("    push %d\n", node->val);
+        printf("    push %ld\n", node->val);
         return;
-    // case ND_LVAR: // 変数の値の参照
-    //     gen_addr(node);
+    case ND_LVAR: // 変数の値の参照
+        gen_addr(node);
 
-    //     // メモリアドレスからデータをレジスタにload
-    //     load();
-    //     return;
-    // case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
-    //     gen_addr(node->lhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
-    //     gen(node->rhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
+        // メモリアドレスからデータをレジスタにload
+        load();
+        return;
+    case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
+        gen_addr(node->lhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
+        gen(node->rhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
 
-    //     // メモリアドレスへのデータのstore
-    //     store();
-    //     return;
+        // メモリアドレスへのデータのstore
+        store();
+        return;
     case ND_EXPR_STMT:
         gen(node->lhs);
         printf("    add rsp, 8\n");
@@ -52,7 +53,7 @@ void gen(Node *node) {
 
         // 関数呼び出し元に戻る
         printf("    pop rax\n"); // スタックから値をpopしてraxにセットする
-        printf("    ret\n"); // リターンアドレスをpopして、そのアドレスにジャンプする
+        printf("    jmp .L.return\n"); // リターンアドレスをpopして、そのアドレスにジャンプする
         return;
     }
 
@@ -104,4 +105,29 @@ void gen(Node *node) {
     }
 
     printf("    push rax\n");
+}
+
+void codegen(Node *node) {
+    // アセンブリの前半部分
+    printf(".intel_syntax noprefix\n");
+    printf(".global main\n");
+    printf("main:\n");
+
+    // prologue
+    printf("    push rbp\n");
+    printf("    mov rbp, rsp\n");
+    printf("    sub rsp, %d\n", 208); // 予めa-zまでの変数のスペースを確保しておく(8byte * 26文字)
+
+    // 先頭の式から順にコードを生成
+    for (Node *n = node; n; n = n->next) {
+        // 抽象構文木を降りながらコード生成
+        gen(n);
+    }
+
+    // epilogue
+    // 最後の式の結果がRAXに残っているので、それをRBPにセットして関数からの返り値とする
+    printf(".L.return:\n");
+    printf("    mov rsp, rbp\n");
+    printf("    pop rbp\n");
+    printf("    ret\n");
 }

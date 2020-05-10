@@ -23,11 +23,10 @@ assert() {
 # assert 6 'foo = 1; bar = 2 + 3; return foo + bar;'
 # assert 12 'a = 2; b = 5 * 6 - 8; return a + b / 2;'
 # ローカル変数の実行(アルファベット一文字)
-# assert 2 'a=2; return a;'
-# assert 2 'a=b=2; a;'
-# assert 2 'a = b = 2; b;'
-# assert 0 'a+b; a;'
-# assert 0 'a+1=5;'
+assert 2 'a=2; return a;'
+assert 2 'a=b=2; a;'
+assert 2 'a = b = 2; b;'
+assert 8 'a = 3; z = 5; a + z;'
 # 複数行に対応、return文の実装
 assert 5 'return 5; return 3;'
 assert 1 'return 1; 2; 3;'

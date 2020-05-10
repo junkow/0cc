@@ -55,17 +55,17 @@ Token *consume_ident() {
 void expect(char *op) {
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
-        memcmp(token->str, op, token->len))
+        strncmp(token->str, op, token->len))
         error_at(token->str, "expected \"%s\"", op);
     token = token->next; // 副作用で一つトークンを進める
 }
 
 // 次のトークンが数値の場合には、トークンを一つ進めて、その数値を返す
 // それ以外の場合にはエラーを返す
-int expect_number() {
+long expect_number() {
     if(token->kind != TK_NUM)
         error_at(token->str, "数ではありません");
-    int val = token->val;
+    long val = token->val;
     token = token->next;
     return val;
 }

@@ -21,30 +21,8 @@ int main(int argc, char **argv) {
     // }
 
     // アセンブリコード生成
-    // アセンブリの前半部分
-    printf(".intel_syntax noprefix\n");
-    printf(".global main\n");
-    printf("main:\n");
-
-    // prologue
-    // printf("    push rbp\n");
-    // printf("    mov rbp, rsp\n");
-    // printf("    sub rsp, %d\n", offset); // 予めa-zまでの変数のスペースを確保しておく(8byte * 26文字)
-
-    // 先頭の式から順にコードを生成
-    for (; node; node = node->next) {
-        // 抽象構文木を降りながらコード生成
-        gen(node);
-        // 式の評価結果としてスタックに一つの値が残っているはずなので(gen関数の最後の一行)
-        // スタックが溢れないようにpopしておく
-        // printf("    pop rax\n"); // スタックから値をpopしてraxレジスタにセットする
-    }
-
-    // epilogue
-    // 最後の式の結果がRAXに残っているので、それをRBPにセットして関数からの返り値とする
-    // printf("    mov rsp, rbp\n");
-    // printf("    pop rbp\n");
-    printf("    ret\n");
+    // Traverse the AST to emit assembly.
+    codegen(node);
 
     return 0;
 }

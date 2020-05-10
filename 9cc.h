@@ -46,7 +46,7 @@ void error_at(char *loc, char *fmt, ...);
 bool consume(char *op);
 Token *consume_ident(void);
 void expect(char *op);
-int expect_number(void);
+long expect_number(void);
 bool at_eof(void);
 
 Token *tokenize(void);
@@ -86,8 +86,9 @@ struct Node {
     Node *lhs;     // 左辺 left-hand side
     Node *rhs;     // 右辺 right-hand side
     Node *next;
-    LVar *var;     // kind == ND_LVAR
-    int val;       // kind == ND_NUM
+    char name;
+    LVar *var;     // kind == ND_VAR
+    long val;       // kind == ND_NUM
 };
 
 Node *program(void);
@@ -96,4 +97,4 @@ Node *program(void);
 // codegen.c
 //
 
-void gen(Node *node);
+void codegen(Node *node);
