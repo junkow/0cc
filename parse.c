@@ -186,7 +186,6 @@ static Node *primary() {
             var->next = locals;
             var->len = strlen(tok->str);
             var->name = tok->str;
-            // var->offset = locals->offset + 8; // main.cで行っている
             locals = var; // locals変数が常に連結リストの先頭を指すようにする
         }
 
