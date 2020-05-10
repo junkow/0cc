@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -37,8 +38,8 @@ struct LVar {
     int offset;     // RBPからのオフセット
 };
 
-// ローカル変数
-extern struct LVar *locals;
+// ローカル変数管理のための変数
+extern LVar *locals;
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
@@ -49,8 +50,6 @@ int expect_number(void);
 bool at_eof(void);
 
 Token *tokenize(void);
-
-// global variables
 
 // 現在着目しているトークン
 extern Token *token;
@@ -65,17 +64,19 @@ extern char *user_input;
 // トークン列を抽象構文木に変換する
 // 抽象構文木(AST)のノードの種類
 typedef enum {
-    ND_ADD, // +
-    ND_SUB, // -
-    ND_MUL, // *
-    ND_DIV, // /
-    ND_EQ,  // == : equal
-    ND_NE,  // != : not equal
-    ND_LT,  // <  : less than
-    ND_LE,  // <= : less equal
-    ND_NUM, // 整数
-    ND_ASSIGN, // = : assign
-    ND_LVAR,   // ローカル変数: local variable
+    ND_ADD,       // +
+    ND_SUB,       // -
+    ND_MUL,       // *
+    ND_DIV,       // /
+    ND_EQ,        // == : equal
+    ND_NE,        // != : not equal
+    ND_LT,        // <  : less than
+    ND_LE,        // <= : less equal
+    ND_NUM,       // 整数
+    ND_ASSIGN,    // = : assign
+    ND_LVAR,      // ローカル変数: local variable
+    ND_RETURN,    // return
+    ND_EXPR_STMT, // Expression statement
 } NodeKind;
 
 // 抽象構文木のノードの型
@@ -84,12 +85,12 @@ struct Node {
     NodeKind kind; // ノードの型
     Node *lhs;     // 左辺 left-hand side
     Node *rhs;     // 右辺 right-hand side
-    LVar *var;     // kindがND_LVARの場合にのみ使う。
-    int val;       // kindがND_NUMの場合のみ使う
+    Node *next;
+    LVar *var;     // kind == ND_LVAR
+    int val;       // kind == ND_NUM
 };
 
 Node *program(void);
-extern Node *code[100];
 
 //
 // codegen.c

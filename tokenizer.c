@@ -6,11 +6,11 @@ LVar *locals; // ローカル変数
 
 // エラーを報告してexitする
 void error(char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
-	exit(1);
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
 }
 
 // エラー箇所を報告
@@ -45,7 +45,7 @@ bool consume(char *op) {
 Token *consume_ident() {
     if (token->kind != TK_IDENT)
         return NULL;
-    Token *t = token; // アドレスが進める前に、現在のtokenのアドレスを変数に保存しておく
+    Token *t = token; // アドレスを進める前に、現在のtokenのアドレスを変数に保存しておく
     token = token->next; // 副作用としてグローバル変数のtokenのアドレスを一つ進める
     return t; // アドレスが進む前のtokenのアドレスを返すことで、呼び出し先で現在注目しているtokenのプロパティ(token->strなど)を参照することができる
 }
@@ -56,7 +56,7 @@ void expect(char *op) {
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
         memcmp(token->str, op, token->len))
-        error_at(token->str, "'%c'ではありません", op);
+        error_at(token->str, "expected \"%s\"", op);
     token = token->next; // 副作用で一つトークンを進める
 }
 
@@ -85,16 +85,24 @@ static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 }
 
 static bool startswith(char *p, char *q) {
-    return memcmp(p, q, strlen(q)) == 0;
+    // return memcmp(p, q, strlen(q)) == 0;
+    return strncmp(p, q, strlen(q)) == 0;
 }
 
-static bool is_char(char p) {
-    return ('a' <= p && p <= 'z');
+// Is alphabet or not
+static bool is_alpha(char c) {
+    return ('a' <= c && c <= 'z') ||
+           ('A' <= c && c <= 'Z') ||
+           (c == '_');
+}
+// Is alphabet or number or not
+static bool is_alnum(char c) {
+    return is_alpha(c) || ('0' <= c && c <= '9');
 }
 
 // 入力文字列pをトークナイズしてそれを返す
 Token *tokenize(void) { // グローバル変数を使うので引数はvoidに変更
-	char *p = user_input;
+    char *p = user_input;
     Token head = {}; // ダミーの要素
     head.next = NULL;
     Token *cur = &head;
@@ -106,14 +114,21 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
             continue;
         }
 
+        // Keywords
+        // 文字列がreturnを含んでいて、かつ7文字目が_またはalphabetまたは数値ではないこと
+        if(startswith(p, "return") && !is_alnum(p[6])) {
+            cur = new_token(TK_RESERVED, cur, p, 6);
+            p += 6;
+            continue;
+        }
+
         // Identifier: 識別子
-        if(is_char(*p)) {
-            // char *q = p++;
-            // while(is_char(*p)) {
-            //     p++;
-            // }
-            // cur = new_token(TK_IDENT, cur, q, p-q);
-            cur = new_token(TK_IDENT, cur, p++, 1);
+        if(is_alpha(*p)) {
+            char *q = p++;
+            while(is_alnum(*p)) {
+                p++;
+            }
+            cur = new_token(TK_IDENT, cur, q, p-q);
             continue;
         }
 

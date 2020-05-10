@@ -4,9 +4,9 @@ Node *code[100];
 
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
 static LVar *find_lvar(Token *tok) {
-    for(LVar *var = locals; var != NULL; var=var->next) {
+    for(LVar *var = locals; var; var=var->next) {
         if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
-            // 変数名がリストから見つかったら、その位置のvar構造体を返す
+            // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
             return var;
         }
     }
@@ -56,18 +56,28 @@ static Node *primary(void);
 
 // program = stmt*
 Node *program(void) {
-    int i = 0;
-    locals = NULL; // locals変数を初期化
+    Node head = {};
+    Node *cur = &head;
 
-    while(!at_eof())
-        code[i++] = stmt();
+    while(!at_eof()) {
+        cur->next = stmt();
+        cur = cur->next;
+    }
 
-    code[i] = NULL; // 最後のノードはNULLで埋めておくと、どこが末尾かわかるようになる
+    return head.next;
 }
 
-// stmt = expr ";"
+// stmt = expr ";" | "return" expr ";"
 static Node *stmt(void) {
-    Node *node = expr();
+    if(consume("return")) {
+        Node *node = new_node(ND_RETURN);
+        node->lhs = expr();
+        expect(";");
+        return node;
+    }
+
+    Node *node = new_node(ND_EXPR_STMT);
+    node->lhs = expr();
     expect(";");
     return node;
 }
@@ -160,6 +170,12 @@ static Node *unary() {
 
 // primary = num | ident | ("(" expr ")")*
 static Node *primary() {
+    if(consume("(")) { // 次のトークンが"("なら、"(" expr ")"のはず
+        Node *node = expr();
+        expect(")");
+        return node;
+    }
+
     Token *tok = consume_ident();
     if(tok) {
         Node *node = calloc(1, sizeof(Node));
@@ -168,19 +184,16 @@ static Node *primary() {
         LVar *var = find_lvar(tok); //localvarが既存かどうかをリストから調べる
         if(!var) {
             // 新しくローカル変数(lvar構造体)を作成してlocalsリストにつなげる
-            LVar *v = calloc(1, sizeof(LVar));
-            v->next = locals;
-            v->len = strlen(tok->str);
-            v->offset = locals->offset + 8;
-            locals = v; // locals変数が常に連結リストの先頭を指すようにする
+            // var == NULLなので、そのまま代入できる
+            var = calloc(1, sizeof(LVar));
+            var->next = locals;
+            var->len = strlen(tok->str);
+            var->name = tok->str;
+            locals = var; // locals変数が常に連結リストの先頭を指すようにする
         }
-        return new_node_var(var);
-    }
 
-    if(consume("(")) { // 次のトークンが"("なら、"(" expr ")"のはず
-        Node *node = expr();
-        expect(")");
-        return node;
+         // nodeとvarの紐付け
+        return new_node_var(var);
     }
 
     // それ以外なら数値
