@@ -6,11 +6,11 @@ LVar *locals; // ローカル変数
 
 // エラーを報告してexitする
 void error(char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
-	exit(1);
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
 }
 
 // エラー箇所を報告
@@ -102,7 +102,7 @@ static bool is_alnum(char c) {
 
 // 入力文字列pをトークナイズしてそれを返す
 Token *tokenize(void) { // グローバル変数を使うので引数はvoidに変更
-	char *p = user_input;
+    char *p = user_input;
     Token head = {}; // ダミーの要素
     head.next = NULL;
     Token *cur = &head;

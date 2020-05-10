@@ -64,18 +64,19 @@ extern char *user_input;
 // トークン列を抽象構文木に変換する
 // 抽象構文木(AST)のノードの種類
 typedef enum {
-    ND_ADD, // +
-    ND_SUB, // -
-    ND_MUL, // *
-    ND_DIV, // /
-    ND_EQ,  // == : equal
-    ND_NE,  // != : not equal
-    ND_LT,  // <  : less than
-    ND_LE,  // <= : less equal
-    ND_NUM, // 整数
-    ND_ASSIGN, // = : assign
-    ND_LVAR,   // ローカル変数: local variable
-    ND_RETURN, // return
+    ND_ADD,       // +
+    ND_SUB,       // -
+    ND_MUL,       // *
+    ND_DIV,       // /
+    ND_EQ,        // == : equal
+    ND_NE,        // != : not equal
+    ND_LT,        // <  : less than
+    ND_LE,        // <= : less equal
+    ND_NUM,       // 整数
+    ND_ASSIGN,    // = : assign
+    ND_LVAR,      // ローカル変数: local variable
+    ND_RETURN,    // return
+    ND_EXPR_STMT, // Expression statement
 } NodeKind;
 
 // 抽象構文木のノードの型
@@ -84,12 +85,12 @@ struct Node {
     NodeKind kind; // ノードの型
     Node *lhs;     // 左辺 left-hand side
     Node *rhs;     // 右辺 right-hand side
+    Node *next;
     LVar *var;     // kind == ND_LVAR
     int val;       // kind == ND_NUM
 };
 
 Node *program(void);
-extern Node *code[100];
 
 //
 // codegen.c

@@ -56,25 +56,28 @@ static Node *primary(void);
 
 // program = stmt*
 Node *program(void) {
-    int i = 0;
-    locals = NULL; // locals変数を初期化
+    Node head = {};
+    Node *cur = &head;
 
-    while(!at_eof())
-        code[i++] = stmt();
+    while(!at_eof()) {
+        cur->next = stmt();
+        cur = cur->next;
+    }
 
-    code[i] = NULL; // 最後のノードはNULLで埋めておくと、どこが末尾かわかるようになる
+    return head.next;
 }
 
 // stmt = expr ";" | "return" expr ";"
 static Node *stmt(void) {
-    Node *node;
-    if(consume("return"))
-        node = new_node(ND_RETURN);
+    if(consume("return")) {
+        Node *node = new_node(ND_RETURN);
         node->lhs = expr();
         expect(";");
         return node;
+    }
 
-    node = expr();
+    Node *node = new_node(ND_EXPR_STMT);
+    node->lhs = expr();
     expect(";");
     return node;
 }
