@@ -2,7 +2,7 @@
 
 Token *token;
 char *user_input;
-LVar *locals; // ローカル変数
+Var *locals; // ローカル変数
 
 // エラーを報告してexitする
 void error(char *fmt, ...) {

@@ -30,16 +30,16 @@ struct Token {
 
 // 変数を連結リストで表す
 // ローカル変数の型
-typedef struct LVar LVar;
-struct LVar {
-    LVar *next;     // 次の変数かNULL
+typedef struct Var Var;
+struct Var {
+    Var *next;     // 次の変数かNULL
     char *name;     // 変数の名前
     int len;        // 変数の名前の長さ
     int offset;     // RBPからのオフセット
 };
 
 // ローカル変数管理のための変数
-extern LVar *locals;
+extern Var *locals;
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
@@ -74,7 +74,7 @@ typedef enum {
     ND_LE,        // <= : less equal
     ND_NUM,       // 整数
     ND_ASSIGN,    // = : assign
-    ND_LVAR,      // ローカル変数: local variable
+    ND_VAR,      // ローカル変数: local variable
     ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement
 } NodeKind;
@@ -86,8 +86,7 @@ struct Node {
     Node *lhs;     // 左辺 left-hand side
     Node *rhs;     // 右辺 right-hand side
     Node *next;
-    char name;
-    LVar *var;     // kind == ND_VAR
+    Var *var;     // kind == ND_VAR
     long val;       // kind == ND_NUM
 };
 

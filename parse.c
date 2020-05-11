@@ -1,8 +1,8 @@
 #include "9cc.h"
 
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
-static LVar *find_lvar(Token *tok) {
-    for(LVar *var = locals; var; var=var->next) {
+static Var *find_var(Token *tok) {
+    for(Var *var = locals; var; var=var->next) {
         if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
             // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
             return var;
@@ -34,8 +34,8 @@ static Node *new_unary(NodeKind kind, Node *lhs) {
     return node;
 }
 
-static Node *new_node_var(LVar *var) {
-    Node *node = new_node(ND_LVAR);
+static Node *new_node_var(Var *var) {
+    Node *node = new_node(ND_VAR);
     node->name = *(var->name);
     node->var = var;
     return node;
@@ -181,13 +181,13 @@ static Node *primary() {
 
     Token *tok = consume_ident();
     if(tok) {
-        Node *node = new_node(ND_LVAR);
+        Node *node = new_node(ND_VAR);
 
-        LVar *var = find_lvar(tok); //localvarが既存かどうかをリストから調べる
+        Var *var = find_var(tok); //localvarが既存かどうかをリストから調べる
         if(!var) {
-            // 新しくローカル変数(lvar構造体)を作成してlocalsリストにつなげる
+            // 新しくローカル変数(Var構造体)を作成してlocalsリストにつなげる
             // var == NULLなので、そのまま代入できる
-            var = calloc(1, sizeof(LVar));
+            var = calloc(1, sizeof(Var));
             var->next = locals;
             var->len = strlen(tok->str);
             var->name = tok->str;

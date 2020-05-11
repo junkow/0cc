@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 
     // ローカル変数にオフセットを割り当て
     // int offset = 0;
-    // for(LVar *v = locals; v; v->next) {
+    // for(Var *v = locals; v; v->next) {
     //     offset += 8;
     //     v->offset = offset; // ここへの代入ができない
     // }

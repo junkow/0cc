@@ -2,7 +2,7 @@
 
 // ローカル変数のアドレスの取得
 static void gen_addr(Node *node) {
-    if(node->kind == ND_LVAR) {
+    if(node->kind == ND_VAR) {
         int offset = (node->name - 'a' + 1) * 8;
         printf("    lea rax, [rbp-%d]\n", offset); // lea : load effective address
         printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
@@ -31,7 +31,7 @@ static void gen(Node *node) {
     case ND_NUM:
         printf("    push %ld\n", node->val);
         return;
-    case ND_LVAR: // 変数の値の参照
+    case ND_VAR: // 変数の値の参照
         gen_addr(node);
 
         // メモリアドレスからデータをレジスタにload
