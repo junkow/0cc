@@ -18,10 +18,10 @@ assert() {
 
 # 複数文字のローカル変数
 # 変数は定義なしに使えるものとする
-# assert 5 'return 6 return 5;'
-# assert 5 'return 5; return 8;'
-# assert 6 'foo = 1; bar = 2 + 3; return foo + bar;'
-# assert 12 'a = 2; b = 5 * 6 - 8; return a + b / 2;'
+assert 3 'foo=3; return foo;'
+assert 8 'foo123=3; bar=5; return foo123+bar;'
+assert 6 'foo = 1; bar = 2 + 3; return foo + bar;'
+assert 12 'a = 2; b = 5 * 6 - 8; return (a + b) / 2;'
 # ローカル変数の実行(アルファベット一文字)
 assert 2 'a=2; return a;'
 assert 2 'a=b=2; a;'

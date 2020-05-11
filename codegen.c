@@ -3,8 +3,7 @@
 // ローカル変数のアドレスの取得
 static void gen_addr(Node *node) {
     if(node->kind == ND_VAR) {
-        int offset = (node->name - 'a' + 1) * 8;
-        printf("    lea rax, [rbp-%d]\n", offset); // lea : load effective address
+        printf("    lea rax, [rbp-%d]\n", node->var->offset); // lea : load effective address
         printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
         return;
     }
@@ -107,7 +106,7 @@ static void gen(Node *node) {
     printf("    push rax\n");
 }
 
-void codegen(Node *node) {
+void codegen(Function *prog) {
     // アセンブリの前半部分
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
@@ -116,12 +115,12 @@ void codegen(Node *node) {
     // prologue
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-    printf("    sub rsp, %d\n", 208); // 予めa-zまでの変数のスペースを確保しておく(8byte * 26文字)
+    printf("    sub rsp, %d\n", prog->stack_size); // 予めa-zまでの変数のスペースを確保しておく(8byte * 26文字)
 
     // 先頭の式から順にコードを生成
-    for (Node *n = node; n; n = n->next) {
+    for (Node *node = prog->node; node; node = node->next) {
         // 抽象構文木を降りながらコード生成
-        gen(n);
+        gen(node);
     }
 
     // epilogue

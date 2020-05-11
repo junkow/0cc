@@ -1,7 +1,9 @@
+.gitignore
 *~
 *.o
 tmp*
 a.out
 9cc
 *.s
-test/
+*/
+Dockerfile

@@ -1,14 +1,26 @@
 #include "9cc.h"
 
+Var *locals; // 連結リストを管理する
+
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
 static Var *find_var(Token *tok) {
     for(Var *var = locals; var; var=var->next) {
-        if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+        if(strlen(var->name) == tok->len && !strncmp(tok->str, var->name, tok->len)) {
             // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
             return var;
         }
     }
     return NULL;
+}
+
+static Var *new_lvar(char *name) {
+    Var *var = calloc(1, sizeof(Var));
+    var->name = name;
+    // 新しくローカル変数(Var構造体)を作成してlocalsリストにつなげる
+    var->next = locals;
+    locals = var; // locals変数が常に連結リストの先頭を指すようにする
+
+    return var;
 }
 
 // 新しいノードを作成する関数
@@ -36,7 +48,6 @@ static Node *new_unary(NodeKind kind, Node *lhs) {
 
 static Node *new_node_var(Var *var) {
     Node *node = new_node(ND_VAR);
-    node->name = *(var->name);
     node->var = var;
     return node;
 }
@@ -60,7 +71,9 @@ static Node *unary(void);
 static Node *primary(void);
 
 // program = stmt*
-Node *program(void) {
+Function *program(void) {
+    locals = NULL;
+
     Node head = {};
     Node *cur = &head;
 
@@ -69,7 +82,11 @@ Node *program(void) {
         cur = cur->next;
     }
 
-    return head.next;
+    Function *prog = calloc(1, sizeof(Function));
+    prog->node = head.next;
+    prog->locals = locals;
+
+    return prog;
 }
 
 // stmt = expr ";" | "return" expr ";"
@@ -181,17 +198,11 @@ static Node *primary() {
 
     Token *tok = consume_ident();
     if(tok) {
-        Node *node = new_node(ND_VAR);
-
+        // Node *node = new_node(ND_VAR);
         Var *var = find_var(tok); //localvarが既存かどうかをリストから調べる
         if(!var) {
-            // 新しくローカル変数(Var構造体)を作成してlocalsリストにつなげる
             // var == NULLなので、そのまま代入できる
-            var = calloc(1, sizeof(Var));
-            var->next = locals;
-            var->len = strlen(tok->str);
-            var->name = tok->str;
-            locals = var; // locals変数が常に連結リストの先頭を指すようにする
+            var = new_lvar(strndup(tok->str, tok->len));
         }
 
          // nodeとvarの紐付け

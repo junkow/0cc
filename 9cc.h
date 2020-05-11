@@ -32,14 +32,10 @@ struct Token {
 // ローカル変数の型
 typedef struct Var Var;
 struct Var {
-    Var *next;     // 次の変数かNULL
+    Var *next;      // 次の変数かNULL
     char *name;     // 変数の名前
-    int len;        // 変数の名前の長さ
     int offset;     // RBPからのオフセット
 };
-
-// ローカル変数管理のための変数
-extern Var *locals;
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
@@ -53,7 +49,6 @@ Token *tokenize(void);
 
 // 現在着目しているトークン
 extern Token *token;
-// エラーを報告するための関数
 // 入力された文字列全体を受け取る変数
 extern char *user_input;
 
@@ -74,26 +69,33 @@ typedef enum {
     ND_LE,        // <= : less equal
     ND_NUM,       // 整数
     ND_ASSIGN,    // = : assign
-    ND_VAR,      // ローカル変数: local variable
+    ND_VAR,       // ローカル変数: local variable
     ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement
 } NodeKind;
 
-// 抽象構文木のノードの型
+// 抽象構文木(AST)のノードの型
 typedef struct Node Node;
 struct Node {
     NodeKind kind; // ノードの型
     Node *lhs;     // 左辺 left-hand side
     Node *rhs;     // 右辺 right-hand side
-    Node *next;
-    Var *var;     // kind == ND_VAR
-    long val;       // kind == ND_NUM
+    Node *next;    // next node
+    Var *var;      // kind == ND_VAR
+    long val;      // kind == ND_NUM
 };
 
-Node *program(void);
+typedef struct Function Function;
+struct Function {
+    Node *node;
+    Var *locals;
+    int stack_size;
+};
+
+Function *program(void);
 
 //
 // codegen.c
 //
 
-void codegen(Node *node);
+void codegen(Function *prog);
