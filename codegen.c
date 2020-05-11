@@ -3,6 +3,7 @@
 // ローカル変数のアドレスの取得
 static void gen_addr(Node *node) {
     if(node->kind == ND_VAR) {
+        printf("#== Push to stack the memory address of local variable ==#\n");
         printf("    lea rax, [rbp-%d]\n", node->var->offset); // lea : load effective address
         printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
         return;
@@ -12,12 +13,14 @@ static void gen_addr(Node *node) {
 }
 
 static void load(void) {
+    printf("#== メモリアドレスから値をload ==#\n");
     printf("    pop rax\n"); // スタックからローカル変数のアドレスをpopしてraxに保存する
     printf("    mov rax, [rax]\n"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
     printf("    push rax\n"); // raxの値をスタックにpush
 }
 
 static void store(void) {
+    printf("#== メモリアドレスに値をstore ==#\n");
     printf("    pop rdi\n"); // スタックの値をrdiにロードする
     printf("    pop rax\n"); // スタックの値をraxにロードする
     printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
@@ -44,13 +47,17 @@ static void gen(Node *node) {
         store();
         return;
     case ND_EXPR_STMT:
+        // expression (式):  値を一つ必ず残す
+        // statement (宣言):  値を必ず何も残さない
         gen(node->lhs);
+        printf("#== 式 ==#\n");
         printf("    add rsp, 8\n");
         return;
     case ND_RETURN:
         gen(node->lhs); // returnの返り値になっている式のコードが出力される
 
         // 関数呼び出し元に戻る
+        printf("#== Return to the caller address ==#\n");
         printf("    pop rax\n"); // スタックから値をpopしてraxにセットする
         printf("    jmp .L.return\n"); // リターンアドレスをpopして、そのアドレスにジャンプする
         return;
@@ -113,6 +120,7 @@ void codegen(Function *prog) {
     printf("main:\n");
 
     // prologue
+    printf("#== Prologue ==#\n");
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
     printf("    sub rsp, %d\n", prog->stack_size); // 予めa-zまでの変数のスペースを確保しておく(8byte * 26文字)
@@ -124,8 +132,8 @@ void codegen(Function *prog) {
     }
 
     // epilogue
-    // 最後の式の結果がRAXに残っているので、それをRBPにセットして関数からの返り値とする
-    printf(".L.return:\n");
+    printf("#== Epilogue ==#\n");
+    printf(".L.return:\n");     // ラベル(`.L`はファイルスコープ)
     printf("    mov rsp, rbp\n");
     printf("    pop rbp\n");
     printf("    ret\n");
