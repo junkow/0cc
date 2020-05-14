@@ -35,7 +35,7 @@ void error_at(char *loc, char *fmt, ...) {
 bool consume(char *op) {
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
-        memcmp(token->str, op, token->len))
+        strncmp(token->str, op, token->len))
         return false;
     token = token->next; // 副作用で一つトークンを進める
     return true;
@@ -85,7 +85,6 @@ static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 }
 
 static bool startswith(char *p, char *q) {
-    // return memcmp(p, q, strlen(q)) == 0;
     return strncmp(p, q, strlen(q)) == 0;
 }
 
