@@ -94,9 +94,25 @@ static bool is_alpha(char c) {
            ('A' <= c && c <= 'Z') ||
            (c == '_');
 }
+
 // Is alphabet or number or not
 static bool is_alnum(char c) {
     return is_alpha(c) || ('0' <= c && c <= '9');
+}
+
+// If the string includes the reserved keywords returns the keyword.
+static char *is_keyword(char *p) {
+    // Keywords
+    static char *kw[] = {"return", "if", "else"};
+
+    for(int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
+        int len = strlen(kw[i]);
+        // 文字列がkeywordを含んでいて、かつ次のひと文字が_またはalphabetまたは数値ではないこと
+        if(startswith(p, kw[i]) && !is_alnum(p[len]))
+            return kw[i];
+    }
+
+    return NULL;
 }
 
 // 入力文字列pをトークナイズしてそれを返す
@@ -114,10 +130,11 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
         }
 
         // Keywords
-        // 文字列がreturnを含んでいて、かつ7文字目が_またはalphabetまたは数値ではないこと
-        if(startswith(p, "return") && !is_alnum(p[6])) {
-            cur = new_token(TK_RESERVED, cur, p, 6);
-            p += 6;
+        char *kw = is_keyword(p);
+        if(kw) {
+            int len = strlen(kw);
+            cur = new_token(TK_RESERVED, cur, p, len);
+            p += len;
             continue;
         }
 
@@ -131,7 +148,7 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
             continue;
         }
 
-        // Multi-letter punctuator
+        // Multi-letter punctuators
         // 複数文字の方を先に書く
         if(startswith(p, "==") || startswith(p, "!=") ||
            startswith(p, "<=") || startswith(p, ">=")) {
@@ -140,7 +157,7 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
             continue;
         }
 
-        // Single-letter punctuator
+        // Single-letter punctuators
         if(strchr("+-*/()<>;=", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1); // pの値を入力後pをひとつ進める
             continue;
@@ -154,7 +171,7 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
             continue;
         }
 
-        error_at(p, "トークナイズできません");
+        error_at(p, "invalid token");
     }
 
     new_token(TK_EOF, cur, p, 0);
