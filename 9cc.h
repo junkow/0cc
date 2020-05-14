@@ -67,20 +67,27 @@ typedef enum {
     ND_NE,        // != : not equal
     ND_LT,        // <  : less than
     ND_LE,        // <= : less equal
-    ND_NUM,       // 整数
     ND_ASSIGN,    // = : assign
-    ND_VAR,       // ローカル変数: local variable
     ND_RETURN,    // "return"
+    ND_IF,        // "if"
     ND_EXPR_STMT, // Expression statement
+    ND_VAR,       // local variable
+    ND_NUM,       // integer
 } NodeKind;
 
 // 抽象構文木(AST)のノードの型
 typedef struct Node Node;
 struct Node {
     NodeKind kind; // ノードの型
+    Node *next;    // next node
     Node *lhs;     // 左辺 left-hand side
     Node *rhs;     // 右辺 right-hand side
-    Node *next;    // next node
+
+    // "if" statement
+    Node *cond;    // condition
+    Node *then;
+    Node *els;     // else
+
     Var *var;      // kind == ND_VAR
     long val;      // kind == ND_NUM
 };
