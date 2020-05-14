@@ -70,7 +70,7 @@ typedef enum {
     ND_NUM,       // 整数
     ND_ASSIGN,    // = : assign
     ND_VAR,       // ローカル変数: local variable
-    ND_RETURN,    // return
+    ND_RETURN,    // "return"
     ND_EXPR_STMT, // Expression statement
 } NodeKind;
 

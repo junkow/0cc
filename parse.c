@@ -199,7 +199,7 @@ static Node *primary() {
     Token *tok = consume_ident();
     if(tok) {
         // Node *node = new_node(ND_VAR);
-        Var *var = find_var(tok); //localvarが既存かどうかをリストから調べる
+        Var *var = find_var(tok); //local variableが既存かどうかをリストから調べる
         if(!var) {
             // var == NULLなので、そのまま代入できる
             var = new_lvar(strndup(tok->str, tok->len));

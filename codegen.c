@@ -14,15 +14,15 @@ static void gen_addr(Node *node) {
 
 static void load(void) {
     printf("#----- Load a value from the memory address.\n");
-    printf("    pop rax\n"); // スタックからローカル変数のアドレスをpopしてraxに保存する
+    printf("    pop rax\n"); // スタックトップからローカル変数のアドレスをpopしてraxに保存する
     printf("    mov rax, [rax]\n"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
     printf("    push rax\n"); // raxの値をスタックにpush
 }
 
 static void store(void) {
     printf("#----- Store a value to the memory address.\n");
-    printf("    pop rdi\n"); // スタックの値をrdiにロードする
-    printf("    pop rax\n"); // スタックの値をraxにロードする
+    printf("    pop rdi\n"); // スタックトップの値(右辺値)をrdiにロードする
+    printf("    pop rax\n"); // スタックトップの値(アドレス)をraxにロードする
     printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
     printf("    push rdi\n"); // rdiの値をスタックにpush
 }
@@ -40,8 +40,8 @@ static void gen(Node *node) {
         load();
         return;
     case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
-        gen_addr(node->lhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
-        gen(node->rhs); // =>最終的に計算結果を入れたraxの値がスタックにpushされる ...push rax
+        gen_addr(node->lhs); // =>最終的に計算結果を入れたraxの値(アドレス)がスタックにpushされる ...push rax
+        gen(node->rhs); // =>最終的に計算結果を入れたraxの値(右辺値)がスタックにpushされる ...push rax
 
         // メモリアドレスへのデータのstore
         store();
@@ -58,8 +58,8 @@ static void gen(Node *node) {
 
         // 関数呼び出し元に戻る
         printf("#----- Returns to the caller address.\n");
-        printf("    pop rax\n"); // スタックから値をpopしてraxにセットする
-        printf("    jmp .L.return\n"); // リターンアドレスをpopして、そのアドレスにジャンプする
+        printf("    pop rax\n"); // スタックトップから値をpopしてraxにセットする
+        printf("    jmp .L.return\n"); // .L.returnラベルにジャンプ
         return;
     }
 
