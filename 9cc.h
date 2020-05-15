@@ -84,7 +84,7 @@ struct Node {
     Node *rhs;     // 右辺 right-hand side
 
     // "if" statement
-    Node *cond;    // condition
+    Node *cond;    // condition(条件)
     Node *then;
     Node *els;     // else
 

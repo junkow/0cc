@@ -89,14 +89,31 @@ Function *program(void) {
     return prog;
 }
 
-// stmt = expr ";" | "return" expr ";"
+// stmt = "return" expr ";"
+//      | "if" "(" expr ")" stmt ("else" stmt)?
+//      | expr ";"
 static Node *stmt(void) {
+    // return文のnode
     if(consume("return")) {
         Node *node = new_unary(ND_RETURN, expr());
         expect(";");
         return node;
     }
 
+    // if文のnode
+    if(consume("if")) {
+        Node *node = new_node(ND_IF);
+        expect("(");
+        node->cond = expr();
+        expect(")");
+        node->then = stmt();
+        if(consume("else"))
+            node->els = stmt();
+
+        return node;
+    }
+
+     // expression statement
     Node *node = new_unary(ND_EXPR_STMT, expr());
     expect(";");
     return node;
