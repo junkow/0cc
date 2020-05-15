@@ -33,6 +33,13 @@ static void gen(Node *node) {
     case ND_NUM:
         printf("    push %ld\n", node->val);
         return;
+    case ND_EXPR_STMT:
+        // expression (式):  値を一つ必ず残す
+        // statement (宣言):  値を必ず何も残さない
+        gen(node->lhs);
+        printf("#----- Expression statement\n");
+        printf("    add rsp, 8\n");
+        return;
     case ND_VAR: // 変数の値の参照
         gen_addr(node);
 
@@ -46,12 +53,14 @@ static void gen(Node *node) {
         // メモリアドレスへのデータのstore
         store();
         return;
-    case ND_EXPR_STMT:
-        // expression (式):  値を一つ必ず残す
-        // statement (宣言):  値を必ず何も残さない
-        gen(node->lhs);
-        printf("#----- Expression statement\n");
-        printf("    add rsp, 8\n");
+    case ND_IF:
+        printf("#----- If statement\n");
+        gen(node->cond); // Aをコンパイルしたコード スタックトップに値が積まれているはず
+        printf("    pop rax\n");
+        printf("    cmp rax, 0\n");
+        printf("    je .L.end001\n");
+        gen(node->then);
+        printf(".L.end001:\n");
         return;
     case ND_RETURN:
         gen(node->lhs); // returnの返り値になっている式のコードが出力される

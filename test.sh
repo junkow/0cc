@@ -16,6 +16,11 @@ assert() {
     fi  
 }
 
+# if文
+assert 3 'if(0) return 2; return 3;'
+assert 2 'if(1) return 2; return 3;'
+assert 3 'if(1-1) return 2; return 3;'
+assert 3 'a = 0; if(a) return 2; return 3;'
 # 複数文字のローカル変数
 # 変数は定義なしに使えるものとする
 assert 3 'foo=3; return foo;'
@@ -32,10 +37,10 @@ assert 5 'return 5; return 3;'
 assert 1 'return 1; 2; 3;'
 assert 2 '1; return 2; 3;'
 assert 3 '1; 2; return 3;'
-# 複数の式の場合、最後の行の実行結果が出力に反映される
-# assert 1 '+8*-5<-8+10; +8*-5<-8+10;'
-# assert 0 '+8*-5<-8+10; +201<=+200;'
-# assert 42 '+8*-5<-8+10; +201<=+200; 42;'
+# 複数のreturn文の場合、最初の行の実行結果が出力に反映される
+assert 1 'return +8*-5<-8+10;'
+assert 0 'return +201<=+200; return +8*-5<-8+10;'
+assert 0 'return +201<=+200; return +8*-5<-8+10; return 42;'
 # ture: 1, false: 0
 assert 1 'return 0!=1;'
 assert 0 'return 42!=42;'
