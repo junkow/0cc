@@ -81,16 +81,44 @@ static void gen(Node *node) {
     }
     case ND_WHILE: {
         int seq = labelseq++;
+        /* 
+            while(A) B
+            A: expression
+            B: statement
+        */
         printf("#----- \"While\" statement\n");
-
-        // while(A) B
-        // A: expression, B: statement
         printf(".L.begin.%d:\n", seq);
         gen(node->cond);    // Aをコンパイルしたコード
         printf("    pop rax\n");
         printf("    cmp rax, 0\n");
         printf("    je  .L.end.%d\n", seq);
         gen(node->then);    // Bをコンパイルしたコード
+        printf("    jmp .L.begin.%d\n", seq);
+        printf(".L.end.%d:\n", seq);
+        return;
+    }
+    case ND_FOR: {
+        int seq = labelseq++;
+        /*
+            for(A;B;C) D
+            A: initialize  expression statement
+            B: condition   expression
+            C: increment   expression statement
+            D:             statement
+        */
+        printf("#----- \"For\" statement\n");
+        if(node->init)
+            gen(node->init); // the code which compiled A
+        printf(".L.begin.%d:\n", seq);
+        if(node->cond) {
+            gen(node->cond); // the code which compiled B
+            printf("    pop rax\n");
+            printf("    cmp rax, 0\n");
+            printf("    je  .L.end.%d\n", seq);
+        }
+        gen(node->then); // the code which compiled D
+        if(node->inc)
+            gen(node->inc);  // the code which compiled C
         printf("    jmp .L.begin.%d\n", seq);
         printf(".L.end.%d:\n", seq);
         return;

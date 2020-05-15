@@ -89,10 +89,15 @@ Function *program(void) {
     return prog;
 }
 
+static Node *read_expr_stmt(void) {
+    return new_unary(ND_EXPR_STMT, expr());
+}
+
 // statement(宣言): 値を必ずなにも残さない
 // stmt = "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
+//      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | expr ";"
 static Node *stmt(void) {
     // return文のnode
@@ -125,8 +130,30 @@ static Node *stmt(void) {
         return node;
     }
 
-     // expression statement
-    Node *node = new_unary(ND_EXPR_STMT, expr());
+    // for文のnode
+    if(consume("for")) {
+        Node *node = new_node(ND_FOR);
+        expect("(");
+        if(!consume(";")) {
+            // あとで考える
+            node->init = read_expr_stmt(); // 式宣言
+            expect(";");
+        }
+        if(!consume(";")) {
+            node->cond = expr(); // 式
+            expect(";");
+        }
+        if(!consume(")")) {
+            // あとで考える
+            node->inc = read_expr_stmt(); // 式宣言
+            expect(")");
+        }
+        node->then = stmt();
+        return node;
+    }
+
+    // expression statement
+    Node *node = read_expr_stmt();
     expect(";");
     return node;
 }
@@ -235,7 +262,7 @@ static Node *primary() {
             var = new_lvar(strndup(tok->str, tok->len));
         }
 
-         // nodeとvarの紐付け
+        // nodeとvarの紐付け
         return new_node_var(var);
     }
 

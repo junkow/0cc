@@ -16,8 +16,11 @@ assert() {
     fi  
 }
 
+# for文
+assert 55 'i=0; j=0; for(; i <= 10; i=i+1) j=j+i; return j;'
+assert 3 'for(;;) return 3; return 5;'
 # while文
-assert 10 "i = 0; while(i < 10) i=i+1; return i;"
+assert 10 'i = 0; while(i < 10) i=i+1; return i;'
 # if文
 assert 3 'if(0) return 2; else return 3;'
 assert 2 'if(1) return 2; else return 3;'
