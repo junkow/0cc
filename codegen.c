@@ -57,6 +57,7 @@ static void gen(Node *node) {
         return;
     case ND_IF: {
         int seq = labelseq++;
+
         printf("#----- If statement\n");
         if(node->els) {
             gen(node->cond); // Aをコンパイルしたコード スタックトップに値が積まれているはず
