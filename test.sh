@@ -17,6 +17,8 @@ assert() {
 }
 
 # if文
+assert 3 'if(0) return 2; else return 3;'
+assert 2 'if(1) return 2; else return 3;'
 assert 3 'if(0) return 2; return 3;'
 assert 2 'if(1) return 2; return 3;'
 assert 3 'if(1-1) return 2; return 3;'

@@ -55,12 +55,24 @@ static void gen(Node *node) {
         return;
     case ND_IF:
         printf("#----- If statement\n");
-        gen(node->cond); // Aをコンパイルしたコード スタックトップに値が積まれているはず
-        printf("    pop rax\n");
-        printf("    cmp rax, 0\n");
-        printf("    je .L.end001\n");
-        gen(node->then);
-        printf(".L.end001:\n");
+        if(node->els) {
+            gen(node->cond); // Aをコンパイルしたコード スタックトップに値が積まれているはず
+            printf("    pop rax\n");
+            printf("    cmp rax, 0\n");
+            printf("    je .L.else.001\n");
+            gen(node->then);
+            printf("    jmp .L.end.001\n");
+            printf(".L.else.001:\n");
+            gen(node->els);
+            printf(".L.end.001:\n");
+        } else {
+            gen(node->cond); // Aをコンパイルしたコード スタックトップに値が積まれているはず
+            printf("    pop rax\n");
+            printf("    cmp rax, 0\n");
+            printf("    je .L.end.001\n");
+            gen(node->then);
+            printf(".L.end.001:\n");
+        }
         return;
     case ND_RETURN:
         gen(node->lhs); // returnの返り値になっている式のコードが出力される
