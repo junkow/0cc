@@ -58,25 +58,41 @@ static void gen(Node *node) {
     case ND_IF: {
         int seq = labelseq++;
 
-        printf("#----- If statement\n");
+        printf("#----- \"If\" statement\n");
         if(node->els) {
-            gen(node->cond); // Aをコンパイルしたコード スタックトップに値が積まれているはず
+            gen(node->cond); // expr Aをコンパイルしたコード スタックトップに値が積まれているはず
             printf("    pop rax\n");
             printf("    cmp rax, 0\n");
-            printf("    je .L.else.%d\n", seq);
-            gen(node->then);
+            printf("    je  .L.else.%d\n", seq);
+            gen(node->then); // stmt
             printf("    jmp .L.end.%d\n", seq);
             printf(".L.else.%d:\n", seq);
-            gen(node->els);
+            gen(node->els);  // stmt
             printf(".L.end.%d:\n", seq);
         } else {
-            gen(node->cond); // Aをコンパイルしたコード スタックトップに値が積まれているはず
+            gen(node->cond); // expr Aをコンパイルしたコード スタックトップに値が積まれているはず
             printf("    pop rax\n");
             printf("    cmp rax, 0\n");
-            printf("    je .L.end.%d\n", seq);
-            gen(node->then);
+            printf("    je  .L.end.%d\n", seq);
+            gen(node->then); // stmt
             printf(".L.end.%d:\n", seq);
         }
+        return;
+    }
+    case ND_WHILE: {
+        int seq = labelseq++;
+        printf("#----- \"While\" statement\n");
+
+        // while(A) B
+        // A: expression, B: statement
+        printf(".L.begin.%d:\n", seq);
+        gen(node->cond);    // Aをコンパイルしたコード
+        printf("    pop rax\n");
+        printf("    cmp rax, 0\n");
+        printf("    je  .L.end.%d\n", seq);
+        gen(node->then);    // Bをコンパイルしたコード
+        printf("    jmp .L.begin.%d\n", seq);
+        printf(".L.end.%d:\n", seq);
         return;
     }
     case ND_RETURN:

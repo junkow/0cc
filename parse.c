@@ -89,8 +89,10 @@ Function *program(void) {
     return prog;
 }
 
+// statement(宣言): 値を必ずなにも残さない
 // stmt = "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
+//      | "while" "(" expr ")" stmt
 //      | expr ";"
 static Node *stmt(void) {
     // return文のnode
@@ -113,12 +115,23 @@ static Node *stmt(void) {
         return node;
     }
 
+    // while文のnode
+    if(consume("while")) {
+        Node *node = new_node(ND_WHILE);
+        expect("(");
+        node->cond = expr();
+        expect(")");
+        node->then = stmt();
+        return node;
+    }
+
      // expression statement
     Node *node = new_unary(ND_EXPR_STMT, expr());
     expect(";");
     return node;
 }
 
+// expression(式): 値を一つ必ず残す
 // expr = assign
 static Node *expr(void) {
     return assign();
