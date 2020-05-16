@@ -101,6 +101,7 @@ struct Node {
 
     // Function call
     char *funcname;
+    Node *args; // 引数を連結リストで管理。そのリストの先頭のアドレス
 
     Var *var;      // kind == ND_VAR
     long val;      // kind == ND_NUM

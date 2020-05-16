@@ -1,6 +1,8 @@
 #include "9cc.h"
 
 static int labelseq = 1;
+// x86_64のABIで規定されている引数をセットするレジスタのリスト(引数の順番と同じ)
+static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 // ローカル変数のアドレスの取得
 static void gen_addr(Node *node) {
@@ -124,18 +126,29 @@ static void gen(Node *node) {
         return;
     }
     case ND_BLOCK: {
-        Node *n = node->body;
+        Node *n = node->body; // statementのリストの先頭
         printf("#----- Block {...}\n");
         for(; n; n = n->next) {
             gen(n);
         }
+        // ひとつひとつのstatementは一つの値をスタックに残すので、毎回ポップするのをわすれないこと
         return;
     }
-    case ND_FUNCALL:
-        printf("#----- Function call 引数なし \n");
+    case ND_FUNCALL: {
+        printf("#----- Function call 6つまで引数を取れる \n");
+        int nargs = 0;
+        for (Node *arg = node->args; arg; arg = arg->next) {
+            gen(arg);
+            nargs++;
+        }
+
+        for(int i = nargs-1; i >= 0; i--)
+            printf("    pop %s\n", argreg[i]);
+
         printf("    call %s\n", node->funcname);
         printf("    push rax\n");
         return;
+    }
     case ND_RETURN:
         gen(node->lhs); // returnの返り値になっている式のコードが出力される
 
