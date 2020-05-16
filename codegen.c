@@ -123,6 +123,14 @@ static void gen(Node *node) {
         printf(".L.end.%d:\n", seq);
         return;
     }
+    case ND_BLOCK: {
+        Node *n = node->body;
+        printf("#----- Block {...}\n");
+        for(; n; n = n->next) {
+            gen(n);
+        }
+        return;
+    }
     case ND_RETURN:
         gen(node->lhs); // returnの返り値になっている式のコードが出力される
 

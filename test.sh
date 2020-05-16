@@ -16,6 +16,8 @@ assert() {
     fi  
 }
 
+# block {...}
+assert 58 'i=0; j=0; for(; i <= 10; i=i+1) { a = 1; b = 2; j=j+i; } return j+a+b;'
 # for文
 assert 55 'i=0; j=0; for(; i <= 10; i=i+1) j=j+i; return j;'
 assert 3 'for(;;) return 3; return 5;'

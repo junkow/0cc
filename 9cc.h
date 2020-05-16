@@ -71,7 +71,8 @@ typedef enum {
     ND_RETURN,    // "return"
     ND_IF,        // "if"
     ND_WHILE,     // "while"
-    ND_FOR,     // "for"
+    ND_FOR,       // "for"
+    ND_BLOCK,     // { ... }
     ND_EXPR_STMT, // Expression statement
     ND_VAR,       // local variable
     ND_NUM,       // integer
@@ -91,6 +92,9 @@ struct Node {
     Node *els;     // else
     Node *init;    // initialization(初期化式)
     Node *inc;     // increment
+
+    // Block
+    Node *body;
 
     Var *var;      // kind == ND_VAR
     long val;      // kind == ND_NUM

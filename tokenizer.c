@@ -158,7 +158,7 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
         }
 
         // Single-letter punctuators
-        if(strchr("+-*/()<>;=", *p)) {
+        if(strchr("+-*/()<>;={}", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1); // pの値を入力後pをひとつ進める
             continue;
         }

@@ -98,6 +98,7 @@ static Node *read_expr_stmt(void) {
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//      | "{" stmt* "}"
 //      | expr ";"
 static Node *stmt(void) {
     // return文のnode
@@ -149,6 +150,21 @@ static Node *stmt(void) {
             expect(")");
         }
         node->then = stmt();
+        return node;
+    }
+
+    // block {...} (compound-statement)
+    if(consume("{")) {
+        Node head = {};
+        Node *cur = &head;
+
+        while(!consume("}")) { // consume()はerrorでなくbooleanを返すようにしているのでこういう時使えて便利!
+            cur->next = stmt();
+            cur = cur->next;
+        }
+
+        Node *node = new_node(ND_BLOCK);
+        node->body = head.next;
         return node;
     }
 
