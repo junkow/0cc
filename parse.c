@@ -250,6 +250,7 @@ static Node *mul() {
     }
 }
 
+// unary: 単項
 // unary = ("+" | "-")? unary | primary
 static Node *unary() {
     if(consume("+"))
@@ -261,7 +262,8 @@ static Node *unary() {
     return primary();
 }
 
-// primary = num | ident | ("(" expr ")")*
+// primary = num | ident args? | ("(" expr ")")*
+// args = ( "(" ")" )
 static Node *primary() {
     if(consume("(")) { // 次のトークンが"("なら、"(" expr ")"のはず
         Node *node = expr();
@@ -271,7 +273,15 @@ static Node *primary() {
 
     Token *tok = consume_ident();
     if(tok) {
-        // Node *node = new_node(ND_VAR);
+        // Function call
+        if(consume("(")) {
+            expect(")");
+            Node *node = new_node(ND_FUNCALL);
+            node->funcname = strndup(tok->str, tok->len);
+            return node;
+        }
+
+        // Variable
         Var *var = find_var(tok); //local variableが既存かどうかをリストから調べる
         if(!var) {
             // var == NULLなので、そのまま代入できる

@@ -131,6 +131,11 @@ static void gen(Node *node) {
         }
         return;
     }
+    case ND_FUNCALL:
+        printf("#----- Function call 引数なし \n");
+        printf("    call %s\n", node->funcname);
+        printf("    push rax\n");
+        return;
     case ND_RETURN:
         gen(node->lhs); // returnの返り値になっている式のコードが出力される
 

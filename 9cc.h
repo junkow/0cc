@@ -72,7 +72,8 @@ typedef enum {
     ND_IF,        // "if"
     ND_WHILE,     // "while"
     ND_FOR,       // "for"
-    ND_BLOCK,     // { ... }
+    ND_BLOCK,     // { ... } compound-statement
+    ND_FUNCALL,   // Function call
     ND_EXPR_STMT, // Expression statement
     ND_VAR,       // local variable
     ND_NUM,       // integer
@@ -94,7 +95,12 @@ struct Node {
     Node *inc;     // increment
 
     // Block
+    // 複数のstatementをまとめてひとつのstatementにする
+    // stmt()で展開した複数のnodeを連結リストで表して、その先頭のアドレス
     Node *body;
+
+    // Function call
+    char *funcname;
 
     Var *var;      // kind == ND_VAR
     long val;      // kind == ND_NUM
