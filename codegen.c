@@ -142,6 +142,7 @@ static void gen(Node *node) {
             nargs++;
         }
 
+        // 引数の数分、値をpopしてレジスタにセットする
         for(int i = nargs-1; i >= 0; i--)
             printf("    pop %s\n", argreg[i]);
 
