@@ -134,7 +134,7 @@ static void gen(Node *node) {
         // ひとつひとつのstatementは一つの値をスタックに残すので、毎回ポップするのをわすれないこと
         return;
     }
-    case ND_FUNCALL: {
+    case ND_FUNCALL: { // 関数呼び出し
         printf("#----- Function call 6つまで引数を取れる \n");
         int nargs = 0;
         for (Node *arg = node->args; arg; arg = arg->next) {
@@ -146,8 +146,47 @@ static void gen(Node *node) {
         for(int i = nargs-1; i >= 0; i--)
             printf("    pop %s\n", argreg[i]);
 
-        printf("    call %s\n", node->funcname);
-        printf("    push rax\n");
+        // 関数を呼ぶ前にRSPを調整して、RSPを16byte境界(16の倍数)になるようにアラインメントする
+        // - push/popは8byte単位で変更するので、
+        //   call命令を発行する時に必ずしもRSPが16の倍数になっているとは限らない
+        // - ABIで決められている
+        // - RAXは可変関数のために0にセットされている
+        /*
+            and: (論理積, AND, &) ビットを反転したい箇所に0を置く
+            ・rax = 16の場合
+            15 : 01111
+            16 : 10000
+                 00000 => 0
+
+            1 => 1
+            2 => 2
+            3 => 3
+            ...
+            14 => 14
+            15 => 15
+            16 => 0
+            17 => 1
+            18 => 2
+            ...
+            31 => 15
+            32 => 0
+            33 => 1
+            ...
+        */
+        int seq = labelseq++;
+        printf("    mov rax, rsp\n");   // rspの値をraxにコピーする
+        printf("    and rax, 15\n");    // and: 論理積
+        printf("    jnz .L.call.%d\n", seq);  // 結果が0でない(16の倍数でない)=>RSPのアラインメント操作が必要=>.L.call.XXXラベルへジャンプ
+        printf("    mov rax, 0\n");     // raxに0をコピー
+        printf("    call %s\n", node->funcname);  // 関数呼び出し
+        printf("    jmp .L.end.%d\n", seq);  // 関数呼び出しの結果がraxにセットされている=>.L.end.XXXラベルにジャンプ
+        printf(".L.call.%d:\n", seq);   // RSPのアラインメント操作をする
+        printf("    sub rsp, 8\n");     // スタックをひとつ増やす(push/popで8byteごとに操作しているので、8byte増やすことでRSPを16の倍数に調整)
+        printf("    call %s\n", node->funcname);  // 関数呼び出し (RSPがアラインメントできたのでRSPが呼び出せる)
+        printf("    mov rax, 0\n");     // raxの値を0にセットする
+        printf("    add rsp, 8\n");     // スタックをひとつ減らす(RSP調整のために足したスタックを引いておく)
+        printf(".L.end.%d:\n", seq);    // 終了処理
+        printf("    push rax\n");       // raxの値(関数呼び出しの結果)をスタックにプッシュ
         return;
     }
     case ND_RETURN:
