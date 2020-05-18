@@ -42,7 +42,7 @@ bool consume(char *op) {
 }
 
 // トークンが変数(識別子)の場合
-Token *consume_ident() {
+Token *consume_ident(void) {
     if (token->kind != TK_IDENT)
         return NULL;
     Token *t = token; // アドレスを進める前に、現在のtokenのアドレスを変数に保存しておく
@@ -62,7 +62,7 @@ void expect(char *op) {
 
 // 次のトークンが数値の場合には、トークンを一つ進めて、その数値を返す
 // それ以外の場合にはエラーを返す
-long expect_number() {
+long expect_number(void) {
     if(token->kind != TK_NUM)
         error_at(token->str, "数ではありません");
     long val = token->val;
@@ -70,7 +70,15 @@ long expect_number() {
     return val;
 }
 
-bool at_eof() {
+char *expect_ident(void) {
+    if(token->kind != TK_IDENT)
+        error_at(token->str, "expected an identifier");
+    char *s = strndup(token->str, token->len);
+    token = token->next;
+    return s;
+}
+
+bool at_eof(void) {
     return token->kind == TK_EOF;
 }
 

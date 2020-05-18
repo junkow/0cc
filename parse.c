@@ -1,6 +1,8 @@
 #include "9cc.h"
 
-Var *locals; // 連結リストを管理する
+// パース中に作成されたローカル変数インスタンスは、このリストに連結されていく
+// new_lvar関数内でインスタンスが作成されて、連結されている
+Var *locals;
 
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
 static Var *find_var(Token *tok) {
@@ -60,6 +62,7 @@ static Node *new_node_num(long value) {
 
 // 左結合の演算子をパーズする関数
 // 返されるノードの左側の枝のほうが深くなる
+static Function *function(void);
 static Node *stmt(void);
 static Node *expr(void);
 static Node *assign(void);
@@ -70,23 +73,41 @@ static Node *mul(void);
 static Node *unary(void);
 static Node *primary(void);
 
-// program = stmt*
+// program = function*
 Function *program(void) {
+    Function head = {};
+    Function *cur = &head;
+
+    while(!at_eof()) {
+        cur->next = function();
+        cur = cur->next;
+    }
+
+    return head.next;
+}
+
+// function = ident "(" ")" "{" stmt* "}"
+static Function *function() {
     locals = NULL;
+
+    char *name = expect_ident();
+    expect("(");
+    expect(")");
+    expect("{");
 
     Node head = {};
     Node *cur = &head;
 
-    while(!at_eof()) {
+    while(!consume("}")) {
         cur->next = stmt();
         cur = cur->next;
     }
 
-    Function *prog = calloc(1, sizeof(Function));
-    prog->node = head.next;
-    prog->locals = locals;
-
-    return prog;
+    Function *fn = calloc(1, sizeof(Function));
+    fn->name = name;
+    fn->node = head.next;
+    fn->locals = locals; // Function構造体の中のlocalsメンバで、ローカル変数のリストが管理されている
+    return fn;
 }
 
 static Node *read_expr_stmt(void) {

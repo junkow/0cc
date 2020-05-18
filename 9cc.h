@@ -110,11 +110,11 @@ struct Node {
 
 typedef struct Function Function;
 struct Function {
-    Function *next;
-    char *name;
-    Node *node;
-    Var *locals;
-    int stack_size;
+    Function *next;  // 次の関数
+    char *name;      // 関数名
+    Node *node;      // 関数内のNode
+    Var *locals;     // 関数内のローカル変数の連結リストの先頭のアドレス
+    int stack_size;  // スタックサイズ
 };
 
 Function *program(void);

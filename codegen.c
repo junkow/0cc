@@ -1,8 +1,10 @@
 #include "9cc.h"
 
-static int labelseq = 1;
 // x86_64のABIで規定されている引数をセットするレジスタのリスト(引数の順番と同じ)
 static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
+static int labelseq = 1;
+static char *funcname;
 
 // ローカル変数のアドレスの取得
 static void gen_addr(Node *node) {
@@ -195,7 +197,7 @@ static void gen(Node *node) {
         // 関数呼び出し元に戻る
         printf("#----- Returns to the caller address.\n");
         printf("    pop rax\n"); // スタックトップから値をpopしてraxにセットする
-        printf("    jmp .L.return\n"); // .L.returnラベルにジャンプ
+        printf("    jmp .L.return.%s\n", funcname); // .L.returnラベルにジャンプ
         return;
     }
 
@@ -252,25 +254,28 @@ static void gen(Node *node) {
 void codegen(Function *prog) {
     // アセンブリの前半部分
     printf(".intel_syntax noprefix\n");
-    printf(".global main\n");
-    printf("main:\n");
 
-    // prologue
-    printf("#----- Prologue\n");
-    printf("    push rbp\n");
-    printf("    mov rbp, rsp\n");
-    printf("    sub rsp, %d\n", prog->stack_size); // 予めa-zまでの変数のスペースを確保しておく(8byte * 26文字)
+    for(Function *fn = prog; fn; fn = fn->next) {
+        printf(".global %s\n", fn->name);
+        printf("%s:\n", fn->name);
+        funcname = fn->name;
 
-    // 先頭の式から順にコードを生成
-    for (Node *node = prog->node; node; node = node->next) {
-        // 抽象構文木を降りながらコード生成
-        gen(node);
+        // Prologue
+        printf("#----- Prologue\n");
+        printf("    push rbp\n");
+        printf("    mov rbp, rsp\n");
+        printf("    sub rsp, %d\n", fn->stack_size);
+
+        for (Node *node = fn->node; node; node = node->next) {
+            // 抽象構文木を降りながらコード生成
+            gen(node);
+        }
+
+        // Epilogue
+        printf("#----- Epilogue\n");
+        printf(".L.return.%s:\n", funcname);     // ラベル(`.L`はファイルスコープ)
+        printf("    mov rsp, rbp\n");
+        printf("    pop rbp\n");
+        printf("    ret\n");
     }
-
-    // epilogue
-    printf("#----- Epilogue\n");
-    printf(".L.return:\n");     // ラベル(`.L`はファイルスコープ)
-    printf("    mov rsp, rbp\n");
-    printf("    pop rbp\n");
-    printf("    ret\n");
 }
