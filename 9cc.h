@@ -37,6 +37,13 @@ struct Var {
     int offset;     // RBPからのオフセット
 };
 
+// 変数のリストを表す構造体
+// typedef struct VarList VarList;
+// struct VarList {
+//     VarList *next;
+//     Var *var;
+// };
+
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
 bool consume(char *op);
@@ -113,7 +120,10 @@ struct Function {
     Function *next;  // 次の関数
     char *name;      // 関数名
     Node *node;      // 関数内のNode
-    Var *locals;     // 関数内のローカル変数の連結リストの先頭のアドレス
+    // VarList *params; // 関数の引数の連結リストの先頭アドレス
+    // VarList *locals; // 関数内のローカル変数の連結リストの先頭のアドレス
+    Var *params;
+    Var *locals;
     int stack_size;  // スタックサイズ
 };
 

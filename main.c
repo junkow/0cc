@@ -16,7 +16,14 @@ int main(int argc, char **argv) {
     for(Function *fn = prog; fn; fn = fn->next) {
         // ローカル変数にオフセットを割り当て
         int offset = 0;
-        for(Var *var = prog->locals; var; var = var->next) {
+        Var *var = NULL;
+        // 関数定義の引数
+        for(var = prog->params; var; var = var->next) {
+            offset += 8;
+            var->offset = offset;
+        }
+        // 関数内のローカル変数
+        for(var = prog->locals; var; var = var->next) {
             offset += 8;
             var->offset = offset;
         }

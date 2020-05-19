@@ -86,13 +86,37 @@ Function *program(void) {
     return head.next;
 }
 
-// function = ident "(" ")" "{" stmt* "}"
+static Var *read_func_params(void) {
+    if(consume(")"))
+        return NULL;
+
+    // Var *head = calloc(1, sizeof(Var));
+    // head->next = new_lvar(expect_ident());
+    Var *head = calloc(1, sizeof(Var));
+    Var *cur = head;
+    cur->next = new_lvar(expect_ident());
+    cur = cur->next;
+
+    while(consume(")")) {
+        expect(",");
+        cur->next = new_lvar(expect_ident());
+        cur = cur->next;
+    }
+    return head;
+}
+
+// function = ident "(" params? ")" "{" stmt* "}"
+// params   = ident ("," ident)*
 static Function *function() {
     locals = NULL;
 
     char *name = expect_ident();
+    Function *fn = calloc(1, sizeof(Function));
+    fn->name = name;
+
     expect("(");
-    expect(")");
+    // expect(")");
+    fn->params = read_func_params();
     expect("{");
 
     Node head = {};
@@ -103,8 +127,6 @@ static Function *function() {
         cur = cur->next;
     }
 
-    Function *fn = calloc(1, sizeof(Function));
-    fn->name = name;
     fn->node = head.next;
     fn->locals = locals; // Function構造体の中のlocalsメンバで、ローカル変数のリストが管理されている
     return fn;
