@@ -3,10 +3,17 @@
 // パース中に作成されたローカル変数インスタンスは、このリストに連結されていく
 // new_lvar関数内でインスタンスが作成されて、連結されている
 Var *locals;
+Var *params;
 
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
 static Var *find_var(Token *tok) {
     for(Var *var = locals; var; var=var->next) {
+        if(strlen(var->name) == tok->len && !strncmp(tok->str, var->name, tok->len)) {
+            // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
+            return var;
+        }
+    }
+    for(Var *var = params; var; var=var->next) {
         if(strlen(var->name) == tok->len && !strncmp(tok->str, var->name, tok->len)) {
             // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
             return var;
@@ -21,6 +28,16 @@ static Var *new_lvar(char *name) {
     // 新しくローカル変数(Var構造体)を作成してlocalsリストにつなげる
     var->next = locals;
     locals = var; // locals変数が常に連結リストの先頭を指すようにする
+
+    return var;
+}
+
+static Var *new_arg(char *name) {
+    Var *var = calloc(1, sizeof(Var));
+    var->name = name;
+    // 新しくローカル変数(Var構造体)を作成してlocalsリストにつなげる
+    //var->next = params;
+    //params = var; // locals変数が常に連結リストの先頭を指すようにする
 
     return var;
 }
@@ -62,6 +79,7 @@ static Node *new_node_num(long value) {
 
 // 左結合の演算子をパーズする関数
 // 返されるノードの左側の枝のほうが深くなる
+static Var *read_func_params(void);
 static Function *function(void);
 static Node *stmt(void);
 static Node *expr(void);
@@ -87,36 +105,41 @@ Function *program(void) {
 }
 
 static Var *read_func_params(void) {
+    // Token *t = token;
     if(consume(")"))
         return NULL;
 
+    // token = t;
+
     // Var *head = calloc(1, sizeof(Var));
     // head->next = new_lvar(expect_ident());
-    Var *head = calloc(1, sizeof(Var));
-    Var *cur = head;
-    cur->next = new_lvar(expect_ident());
+    Var head = {};
+    Var *cur = &head;
+    cur->next = new_arg(expect_ident());
     cur = cur->next;
 
-    while(consume(")")) {
+    while(!consume(")")) {
         expect(",");
-        cur->next = new_lvar(expect_ident());
+        cur->next = new_arg(expect_ident());
         cur = cur->next;
     }
-    return head;
+
+    return head.next;
 }
 
 // function = ident "(" params? ")" "{" stmt* "}"
 // params   = ident ("," ident)*
 static Function *function() {
     locals = NULL;
+    params = NULL;
 
     char *name = expect_ident();
     Function *fn = calloc(1, sizeof(Function));
     fn->name = name;
 
     expect("(");
-    // expect(")");
-    fn->params = read_func_params();
+    params = read_func_params();
+    fn->params = params;
     expect("{");
 
     Node head = {};
