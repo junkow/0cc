@@ -137,7 +137,7 @@ static void gen(Node *node) {
         return;
     }
     case ND_FUNCALL: { // 関数呼び出し
-        printf("#----- Function call 6つまで引数を取れる \n");
+        printf("#----- Function call with up to 6 parameters. \n");
         int nargs = 0;
         for (Node *arg = node->args; arg; arg = arg->next) {
             gen(arg);
@@ -154,6 +154,7 @@ static void gen(Node *node) {
         */
 
         // 引数の数分、値をpopしてレジスタにセットする
+        printf("#-- 引数をレジスタにセット \n");
         for(int i = nargs-1; i >= 0; i--)
             printf("    pop %s\n", argreg[i]);
 
@@ -186,16 +187,25 @@ static void gen(Node *node) {
         */
         int seq = labelseq++;
         printf("    mov rax, rsp\n");   // rspの値をraxにコピーする
+        printf("#-- スタックフレームが16の倍数になっているかどうかチェック\n");
         printf("    and rax, 15\n");    // and: 論理積
+        printf("#-- もし16の倍数でないならアライン操作するラベルにジャンプ\n");
         printf("    jnz .L.call.%d\n", seq);  // 結果が0でない(16の倍数でない)=>RSPのアラインメント操作が必要=>.L.call.XXXラベルへジャンプ
         printf("    mov rax, 0\n");     // raxに0をコピー
         printf("    call %s\n", node->funcname);  // 関数呼び出し
+        printf("#-- 関数の実行終了のラベルにジャンプ\n");
         printf("    jmp .L.end.%d\n", seq);  // 関数呼び出しの結果がraxにセットされている=>.L.end.XXXラベルにジャンプ
+        printf("#----- スタックフレームを16の倍数にアラインする\n");
+        
         printf(".L.call.%d:\n", seq);   // RSPのアラインメント操作をする
+        printf("#-- push/popの操作で8バイトずつ操作しているので、16の倍数にするにはスタックフレームを8増やせば良い\n");
         printf("    sub rsp, 8\n");     // スタックをひとつ増やす(push/popで8byteごとに操作しているので、8byte増やすことでRSPを16の倍数に調整)
         printf("    call %s\n", node->funcname);  // 関数呼び出し (RSPがアラインメントできたのでRSPが呼び出せる)
         printf("    mov rax, 0\n");     // raxの値を0にセットする
+        printf("#-- アラインのために8増やしたスタックを減らして元に戻す\n");
         printf("    add rsp, 8\n");     // スタックをひとつ減らす(RSP調整のために足したスタックを引いておく)
+        printf("#----- 関数の実行終了\n");
+        
         printf(".L.end.%d:\n", seq);    // 終了処理
         printf("    push rax\n");       // raxの値(関数呼び出しの結果)をスタックにプッシュ
         return;
@@ -277,8 +287,9 @@ void codegen(Function *prog) {
 
         // 引数をローカル変数のようにスタックにpushする
         int i = 0;
-        for(Var *var = fn->params; var; var = var->next) {
-            printf("mov [rbp-%d], %s\n", var->offset, argreg[i++]);
+        for(VarList *vl = fn->params; vl; vl = vl->next) {
+            Var *var = vl->var;
+            printf("    mov [rbp-%d], %s\n", var->offset, argreg[i++]);
         }
 
         // printf("    mov [rbp-8],  rdi\n");

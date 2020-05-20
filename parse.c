@@ -1,19 +1,13 @@
 #include "9cc.h"
 
-// パース中に作成されたローカル変数インスタンスは、このリストに連結されていく
-// new_lvar関数内でインスタンスが作成されて、連結されている
-Var *locals;
-Var *params;
+// ローカル変数と引数を管理するリスト
+// ローカル変数と引数を区別せずにひとつの連結リストで管理できる
+VarList *locals;
 
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
 static Var *find_var(Token *tok) {
-    for(Var *var = locals; var; var=var->next) {
-        if(strlen(var->name) == tok->len && !strncmp(tok->str, var->name, tok->len)) {
-            // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
-            return var;
-        }
-    }
-    for(Var *var = params; var; var=var->next) {
+    for(VarList *vl = locals; vl; vl=vl->next) {
+        Var *var = vl->var;
         if(strlen(var->name) == tok->len && !strncmp(tok->str, var->name, tok->len)) {
             // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
             return var;
@@ -25,19 +19,12 @@ static Var *find_var(Token *tok) {
 static Var *new_lvar(char *name) {
     Var *var = calloc(1, sizeof(Var));
     var->name = name;
-    // 新しくローカル変数(Var構造体)を作成してlocalsリストにつなげる
-    var->next = locals;
-    locals = var; // locals変数が常に連結リストの先頭を指すようにする
 
-    return var;
-}
-
-static Var *new_arg(char *name) {
-    Var *var = calloc(1, sizeof(Var));
-    var->name = name;
-    // 新しくローカル変数(Var構造体)を作成してlocalsリストにつなげる
-    //var->next = params;
-    //params = var; // locals変数が常に連結リストの先頭を指すようにする
+    // ローカル変数と関数の引数を両方含んだ変数のリストを作成
+    VarList *vl = calloc(1, sizeof(VarList));
+    vl->var = var;
+    vl->next = locals; // 関数内のローカル変数(または引数)のインスタンス(VarList構造体)を作成して今のlocalsリストにつなげる
+    locals = vl; // locals変数が常にVarListの連結リストの先頭を指すようにする
 
     return var;
 }
@@ -79,7 +66,7 @@ static Node *new_node_num(long value) {
 
 // 左結合の演算子をパーズする関数
 // 返されるノードの左側の枝のほうが深くなる
-static Var *read_func_params(void);
+static VarList *read_func_params(void);
 static Function *function(void);
 static Node *stmt(void);
 static Node *expr(void);
@@ -104,42 +91,36 @@ Function *program(void) {
     return head.next;
 }
 
-static Var *read_func_params(void) {
-    // Token *t = token;
+static VarList *read_func_params(void) {
     if(consume(")"))
         return NULL;
 
-    // token = t;
-
-    // Var *head = calloc(1, sizeof(Var));
-    // head->next = new_lvar(expect_ident());
-    Var head = {};
-    Var *cur = &head;
-    cur->next = new_arg(expect_ident());
-    cur = cur->next;
+    // ここでは関数の引数のみのリストが作成される
+    VarList *head = calloc(1, sizeof(VarList));
+    head->var = new_lvar(expect_ident()); // localsリストを更新しつつ、新しいVarインスタンスを返す
+    VarList *cur = head;
 
     while(!consume(")")) {
         expect(",");
-        cur->next = new_arg(expect_ident());
+        cur->next = calloc(1, sizeof(VarList));
+        cur->next->var = new_lvar(expect_ident());
         cur = cur->next;
     }
 
-    return head.next;
+    return head;
 }
 
 // function = ident "(" params? ")" "{" stmt* "}"
 // params   = ident ("," ident)*
 static Function *function() {
     locals = NULL;
-    params = NULL;
 
     char *name = expect_ident();
     Function *fn = calloc(1, sizeof(Function));
     fn->name = name;
 
     expect("(");
-    params = read_func_params();
-    fn->params = params;
+    fn->params = read_func_params(); // 関数の引数だけを管理しているVarList
     expect("{");
 
     Node head = {};
@@ -151,7 +132,7 @@ static Function *function() {
     }
 
     fn->node = head.next;
-    fn->locals = locals; // Function構造体の中のlocalsメンバで、ローカル変数のリストが管理されている
+    fn->locals = locals; // ローカル変数と引数を合わせて管理している
     return fn;
 }
 
