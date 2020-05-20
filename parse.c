@@ -2,7 +2,7 @@
 
 // ローカル変数と引数を管理するリスト
 // ローカル変数と引数を区別せずにひとつの連結リストで管理できる
-VarList *locals;
+static VarList *locals;
 
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
 static Var *find_var(Token *tok) {
@@ -115,9 +115,8 @@ static VarList *read_func_params(void) {
 static Function *function() {
     locals = NULL;
 
-    char *name = expect_ident();
     Function *fn = calloc(1, sizeof(Function));
-    fn->name = name;
+    fn->name = expect_ident();
 
     expect("(");
     fn->params = read_func_params(); // 関数の引数だけを管理しているVarList
