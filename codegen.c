@@ -198,7 +198,7 @@ static void gen(Node *node) {
         printf("#----- スタックフレームを16の倍数にアラインする\n");
         
         printf(".L.call.%d:\n", seq);   // RSPのアラインメント操作をする
-        printf("#-- push/popの操作で8バイトずつ操作しているので、16の倍数にするにはスタックフレームを8増やせば良い\n");
+        printf("#-- スタックフレームを8増やす\n");
         printf("    sub rsp, 8\n");     // スタックをひとつ増やす(push/popで8byteごとに操作しているので、8byte増やすことでRSPを16の倍数に調整)
         printf("    call %s\n", node->funcname);  // 関数呼び出し (RSPがアラインメントできたのでRSPが呼び出せる)
         printf("    mov rax, 0\n");     // raxの値を0にセットする

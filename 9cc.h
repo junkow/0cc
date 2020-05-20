@@ -28,22 +28,6 @@ struct Token {
     int len;        // トークン文字列の長さ
 };
 
-// 変数を連結リストで表す
-// ローカル変数の型
-typedef struct Var Var;
-struct Var {
-    // Var *next;      // 次の変数かNULL
-    char *name;     // 変数の名前
-    int offset;     // RBPからのオフセット
-};
-
-// 変数のリストを表す構造体
-typedef struct VarList VarList;
-struct VarList {
-    VarList *next;
-    Var *var;
-};
-
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
 bool consume(char *op);
@@ -63,6 +47,22 @@ extern char *user_input;
 //
 // parse.c
 //
+
+// 変数を連結リストで表す
+// ローカル変数
+typedef struct Var Var;
+struct Var {
+    // Var *next;      // 次の変数かNULL
+    char *name;     // 変数の名前
+    int offset;     // RBPからのオフセット
+};
+
+// 変数のリストを表す構造体
+typedef struct VarList VarList;
+struct VarList {
+    VarList *next;
+    Var *var;
+};
 
 // トークン列を抽象構文木に変換する
 // 抽象構文木(AST)のノードの種類
@@ -92,6 +92,7 @@ typedef struct Node Node;
 struct Node {
     NodeKind kind; // ノードの型
     Node *next;    // next node
+
     Node *lhs;     // 左辺 left-hand side
     Node *rhs;     // 右辺 right-hand side
 
@@ -119,8 +120,9 @@ typedef struct Function Function;
 struct Function {
     Function *next;  // 次の関数
     char *name;      // 関数名
-    Node *node;      // 関数内のNode
     VarList *params; // 関数の引数の連結リストの先頭アドレス
+
+    Node *node;      // 関数内のNode
     VarList *locals; // (関数内のローカル変数+関数の引数)の連結リストの先頭のアドレス
     int stack_size;  // スタックサイズ
 };
