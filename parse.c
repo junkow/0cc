@@ -202,7 +202,7 @@ static Node *stmt(void) {
         Node *node = new_node(ND_FOR);
         expect("(");
         if(!consume(";")) {
-            // あとで考える
+            // TODO: あとで考える
             node->init = read_expr_stmt(); // 式宣言
             expect(";");
         }
@@ -211,7 +211,7 @@ static Node *stmt(void) {
             expect(";");
         }
         if(!consume(")")) {
-            // あとで考える
+            // TODO: あとで考える
             node->inc = read_expr_stmt(); // 式宣言
             expect(")");
         }
