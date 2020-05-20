@@ -32,7 +32,7 @@ assert() {
 assert 3 'main() { return add2(1, 2); } add2(x, y) { return x+y; }'
 assert 1 'main() { return sub2(4, 3); } sub2(x, y) { return x-y; }'
 assert 7 'main() { a = 1; b = 2; c = 3; return a + b + c + sub2(4, 3); } sub2(x, y) { return x-y; }'
-assert 5 'main() { return fib(5); } fib(x) { if(x<=1) return 1; return fib(x-1) + fib(x-2); }'
+assert 8 'main() { return fib(5); } fib(x) { if(x<=1) return 1; return fib(x-1) + fib(x-2); }'
 # 引数なしの関数定義
 assert 32 'main() { return ret32(); } ret32() { return 32; }'
 # 関数呼び出し(引数6つまで)

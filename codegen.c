@@ -130,9 +130,9 @@ static void gen(Node *node) {
     case ND_BLOCK: {
         Node *n = node->body; // statementのリストの先頭
         printf("#----- Block {...}\n");
-        for(; n; n = n->next) {
+        for(; n; n = n->next)
             gen(n);
-        }
+
         // ひとつひとつのstatementは一つの値をスタックに残すので、毎回ポップするのをわすれないこと
         return;
     }
@@ -161,7 +161,7 @@ static void gen(Node *node) {
         // 関数を呼ぶ前にRSPを調整して、RSPを16byte境界(16の倍数)になるようにアラインメントする
         // - push/popは8byte単位で変更するので、
         //   call命令を発行する時に必ずしもRSPが16の倍数になっているとは限らない
-        // - ABIで決められている
+        // - ABI(System V)で決められている
         // - RAXは可変関数のために0にセットされている
         /*
             and: (論理積, AND, &) ビットを反転したい箇所に0を置く
@@ -195,17 +195,17 @@ static void gen(Node *node) {
         printf("    call %s\n", node->funcname);  // 関数呼び出し
         printf("#-- 関数の実行終了のラベルにジャンプ\n");
         printf("    jmp .L.end.%d\n", seq);  // 関数呼び出しの結果がraxにセットされている=>.L.end.XXXラベルにジャンプ
-        printf("#----- スタックフレームを16の倍数にアラインする\n");
         
+        printf("#----- スタックフレームを16の倍数にアラインする\n");
         printf(".L.call.%d:\n", seq);   // RSPのアラインメント操作をする
         printf("#-- スタックフレームを8増やす\n");
         printf("    sub rsp, 8\n");     // スタックをひとつ増やす(push/popで8byteごとに操作しているので、8byte増やすことでRSPを16の倍数に調整)
-        printf("    call %s\n", node->funcname);  // 関数呼び出し (RSPがアラインメントできたのでRSPが呼び出せる)
         printf("    mov rax, 0\n");     // raxの値を0にセットする
+        printf("    call %s\n", node->funcname);  // 関数呼び出し (RSPがアラインメントできたのでRSPが呼び出せる)
         printf("#-- アラインのために8増やしたスタックを減らして元に戻す\n");
         printf("    add rsp, 8\n");     // スタックをひとつ減らす(RSP調整のために足したスタックを引いておく)
-        printf("#----- 関数の実行終了\n");
         
+        printf("#----- 関数の実行終了\n");
         printf(".L.end.%d:\n", seq);    // 終了処理
         printf("    push rax\n");       // raxの値(関数呼び出しの結果)をスタックにプッシュ
         return;

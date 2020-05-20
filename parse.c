@@ -6,7 +6,7 @@ static VarList *locals;
 
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
 static Var *find_var(Token *tok) {
-    for(VarList *vl = locals; vl; vl=vl->next) {
+    for(VarList *vl = locals; vl; vl = vl->next) {
         Var *var = vl->var;
         if(strlen(var->name) == tok->len && !strncmp(tok->str, var->name, tok->len)) {
             // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
@@ -110,6 +110,7 @@ static VarList *read_func_params(void) {
     return head;
 }
 
+/* "関数定義"は {...} の外側 `foo() {...}` のfoo()の部分の解析 */
 // function = ident "(" params? ")" "{" stmt* "}"
 // params   = ident ("," ident)*
 static Function *function() {
@@ -237,7 +238,7 @@ static Node *assign(void) {
 }
 
 // equality = relational ("==" relational | "!=" relational)*
-static Node *equality() {
+static Node *equality(void) {
     Node *node = relational();
 
     for(;;) {
@@ -251,7 +252,7 @@ static Node *equality() {
 }
 
 // relational = add ("<" add | "<=" add | ">" add |  ">=" add)*
-static Node *relational() {
+static Node *relational(void) {
     Node *node = add();
 
     for(;;) {
@@ -269,7 +270,7 @@ static Node *relational() {
 }
 
 // add = mul ("+" mul | "+" mul)*
-static Node *add() {
+static Node *add(void) {
     Node *node = mul();
 
     for(;;) {
@@ -283,7 +284,7 @@ static Node *add() {
 }
 
 // mul = unary ("*" unary | "/" unary)*
-static Node *mul() {
+static Node *mul(void) {
     Node *node = unary();
 
     for(;;) {
@@ -298,7 +299,7 @@ static Node *mul() {
 
 // unary: 単項
 // unary = ("+" | "-")? unary | primary
-static Node *unary() {
+static Node *unary(void) {
     if(consume("+"))
         // +xをxに置き換え
         return unary();
@@ -308,6 +309,10 @@ static Node *unary() {
     return primary();
 }
 
+/* 
+    "関数呼び出し"は {...} のなかでの関数呼び出しの文の解析
+    `foo() { bar(x, y); }`の`bar(x, y)の部分`
+*/
 // func-args = "(" ( assign ("," assign)* )?  ")"
 static Node *func_args(void) {
     if(consume(")"))
@@ -324,7 +329,7 @@ static Node *func_args(void) {
 }
 
 // primary = ("(" expr ")")* | ident func-args | num 
-static Node *primary() {
+static Node *primary(void) {
     if(consume("(")) { // 次のトークンが"("なら、"(" expr ")"のはず
         Node *node = expr();
         expect(")");
