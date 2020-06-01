@@ -12,12 +12,7 @@ void error(char *fmt, ...) {
     exit(1);
 }
 
-// エラー箇所を報告
-// 第2引数以下はprintfと同じ引数をとる
-void error_at(char *loc, char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-
+static void verror_at(char *loc, char *fmt, va_list ap) {
     int pos = loc - user_input;
     fprintf(stderr, "%s\n", user_input);
     fprintf(stderr, "%*s", pos, ""); // pos個の空白を入力
@@ -27,17 +22,35 @@ void error_at(char *loc, char *fmt, ...) {
     exit(1);
 }
 
+// エラー箇所を報告し、exitする
+// 第2引数以下はprintfと同じ引数をとる
+void error_at(char *loc, char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    verror_at(loc, fmt, ap);
+}
+
+// エラー箇所を報告し、exitする
+void error_tok(Token *tok, char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    verror_at(tok->str, fmt, ap);
+}
+
 // parseの中で呼び出すことでtokenがnodeに変換される
 // トークンはconsume/expect/expect_number関数の呼び出しの中で副作用としてひとつずつ読み進めている
-// 次のトークンが期待している記号の時には、トークンを一つ読み進めて真を返す
-// それ以外の場合には偽を返す
-bool consume(char *op) {
+// 次のトークンが期待している記号の時には、トークンを一つ読み進める
+// 現在のトークンを返す
+Token *consume(char *op) {
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
         strncmp(token->str, op, token->len))
-        return false;
+        return NULL;
+    Token *t = token;
     token = token->next; // 副作用で一つトークンを進める
-    return true;
+    return t;
 }
 
 // トークンが変数(識別子)の場合
@@ -55,7 +68,7 @@ void expect(char *op) {
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
         strncmp(token->str, op, token->len))
-        error_at(token->str, "expected \"%s\"", op);
+        error_tok(token, "expected \"%s\"", op);
     token = token->next; // 副作用で一つトークンを進める
 }
 
@@ -63,7 +76,7 @@ void expect(char *op) {
 // それ以外の場合にはエラーを返す
 long expect_number(void) {
     if(token->kind != TK_NUM)
-        error_at(token->str, "数ではありません");
+        error_tok(token, "数ではありません");
     long val = token->val;
     token = token->next;
     return val;
@@ -71,7 +84,7 @@ long expect_number(void) {
 
 char *expect_ident(void) {
     if(token->kind != TK_IDENT)
-        error_at(token->str, "expected an identifier");
+        error_tok(token, "expected an identifier");
     char *s = strndup(token->str, token->len);
     token = token->next;
     return s;
