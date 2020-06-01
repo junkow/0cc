@@ -6,12 +6,18 @@ static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static int labelseq = 1;
 static char *funcname;
 
+static void gen(Node *node);
+
 // ローカル変数のアドレスの取得
 static void gen_addr(Node *node) {
-    if(node->kind == ND_VAR) {
+    switch(node->kind) {
+    case ND_VAR:
         printf("#----- Pushes the given node's memory address to the stack.\n");
         printf("    lea rax, [rbp-%d]\n", node->var->offset); // lea : load effective address
         printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
+        return;
+    case ND_DEREF: // 左辺値に間接参照がきた場合に処理できるようにする
+        gen(node->lhs); // 左辺を展開する
         return;
     }
 
