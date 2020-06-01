@@ -70,6 +70,7 @@ static Node *new_node_num(long value, Token *tok) {
 static VarList *read_func_params(void);
 static Function *function(void);
 static Node *stmt(void);
+static Node *stmt2(void);
 static Node *expr(void);
 static Node *assign(void);
 static Node *equality(void);
@@ -143,13 +144,19 @@ static Node *read_expr_stmt(void) {
 }
 
 // statement(宣言): 値を必ずなにも残さない
-// stmt = "return" expr ";"
+static Node *stmt(void) {
+    Node *node = stmt2();
+    add_type(node);
+    return node;
+}
+
+// stmt2 = "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | "{" stmt* "}"
 //      | expr ";"
-static Node *stmt(void) {
+static Node *stmt2(void) {
     Token *tok;
     // return文のnode
     if(tok = consume("return")) {
@@ -275,6 +282,34 @@ static Node *relational(void) {
     }
 }
 
+static Node *new_add(Node *lhs, Node *rhs, Token *tok) {
+    add_type(lhs);
+    add_type(rhs);
+
+    if(is_integer(lhs->ty) && is_integer(rhs->ty))
+        return new_binary(ND_ADD, lhs, rhs, tok);
+    if(lhs->ty->base && is_integer(rhs->ty))
+        return new_binary(ND_PTR_ADD, lhs, rhs, tok);
+    if(is_integer(lhs->ty) && rhs->ty->base)
+        return new_binary(ND_PTR_ADD, rhs, lhs, tok);
+
+    error_tok(tok, "invalid operands");
+}
+
+static Node *new_sub(Node *lhs, Node *rhs, Token *tok) {
+    add_type(lhs);
+    add_type(rhs);
+
+    if(is_integer(lhs->ty) && is_integer(rhs->ty))
+        return new_binary(ND_SUB, lhs, rhs, tok);
+    if(lhs->ty->base && is_integer(rhs->ty))
+        return new_binary(ND_PTR_SUB, lhs, rhs, tok);
+    if(is_integer(lhs->ty) && rhs->ty->base)
+        return new_binary(ND_PTR_DIFF, lhs, lhs, tok);
+
+    error_tok(tok, "invalid operands");
+}
+
 // add = mul ("+" mul | "+" mul)*
 static Node *add(void) {
     Node *node = mul();
@@ -282,9 +317,9 @@ static Node *add(void) {
 
     for(;;) {
         if(tok = consume("+"))
-            node = new_binary(ND_ADD, node, mul(), tok);
+            node = new_add(node, mul(), tok);
         else if(tok = consume("-"))
-            node = new_binary(ND_SUB, node, mul(), tok);
+            node = new_sub(node, mul(), tok);
         else
             return node;
     }

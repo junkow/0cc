@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct Type Type;
+
 //
 // tokenizer.c
 //
@@ -67,8 +69,11 @@ struct VarList {
 // トークン列を抽象構文木に変換する
 // 抽象構文木(AST)のノードの種類
 typedef enum {
-    ND_ADD,       // +
-    ND_SUB,       // -
+    ND_ADD,       // num + num
+    ND_PTR_ADD,   // ptr + num or num + ptr
+    ND_SUB,       // num - num
+    ND_PTR_SUB,   // ptr - num or num - ptr
+    ND_PTR_DIFF,  // ptr - ptr
     ND_MUL,       // *
     ND_DIV,       // /
     ND_EQ,        // == : equal
@@ -94,6 +99,7 @@ typedef struct Node Node;
 struct Node {
     NodeKind kind; // ノードの型
     Node *next;    // next node
+    Type *ty;      // Type, e.g. int or pointer to int
     Token *tok;    // Representative token
 
     Node *lhs;     // 左辺 left-hand side
@@ -131,6 +137,19 @@ struct Function {
 };
 
 Function *program(void);
+
+//
+// type.c
+//
+
+typedef enum { TY_INT, TY_PTR } TypeKind;
+struct Type {
+    TypeKind kind;
+    Type *base;
+};
+
+bool is_integer(Type *ty);
+void add_type(Node *node);
 
 //
 // codegen.c
