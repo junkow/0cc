@@ -306,15 +306,22 @@ static Node *mul(void) {
 }
 
 // unary: 単項
-// unary = ("+" | "-")? unary | primary
+// unary = ("+" | "-" | "&" | "*")? unary | primary
 static Node *unary(void) {
     Token *tok;
-    if(consume("+"))
+    if(consume("+")) {
         // +xをxに置き換え
         return unary();
-    if (tok = consume("-"))
+    }
+    if (tok = consume("-")) {
         // -xを0-xに置き換え
         return new_binary(ND_SUB, new_node_num(0, tok), unary(), tok);
+    }
+    if(tok = consume("&"))
+        return new_unary(ND_ADDR, unary(), tok);
+    if(tok = consume("*"))
+        return new_unary(ND_DEREF, unary(), tok);
+
     return primary();
 }
 
@@ -345,6 +352,7 @@ static Node *primary(void) {
         return node;
     }
 
+    // 識別子の場合
     Token *tok;
     if(tok = consume_ident()) {
         // Function call

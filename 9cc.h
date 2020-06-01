@@ -76,6 +76,8 @@ typedef enum {
     ND_LT,        // <  : less than
     ND_LE,        // <= : less equal
     ND_ASSIGN,    // = : assign
+    ND_ADDR,      // unary & (単項, アドレス)
+    ND_DEREF,     // unary * (単項, 間接参照)
     ND_RETURN,    // "return"
     ND_IF,        // "if"
     ND_WHILE,     // "while"

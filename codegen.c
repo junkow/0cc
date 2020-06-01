@@ -218,6 +218,13 @@ static void gen(Node *node) {
         printf("    pop rax\n"); // スタックトップから値をpopしてraxにセットする
         printf("    jmp .L.return.%s\n", funcname); // .L.returnラベルにジャンプ
         return;
+    case ND_ADDR:
+        gen_addr(node->lhs);
+        return;
+    case ND_DEREF:
+        gen(node->lhs);
+        load();
+        return;
     }
 
     gen(node->lhs);
