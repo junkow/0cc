@@ -82,6 +82,9 @@ long expect_number(void) {
     return val;
 }
 
+// トークンが識別子かどうか
+// 識別子の場合はその識別子の文字列を返す、トークンを一つすすめる
+// それ以外はエラーを出力してexit
 char *expect_ident(void) {
     if(token->kind != TK_IDENT)
         error_tok(token, "expected an identifier");
