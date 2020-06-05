@@ -142,7 +142,11 @@ Function *program(void);
 // type.c
 //
 
-typedef enum { TY_INT, TY_PTR } TypeKind;
+typedef enum { 
+    TY_INT,
+    TY_PTR,
+} TypeKind;
+
 struct Type {
     TypeKind kind;
     Type *base;

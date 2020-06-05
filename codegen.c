@@ -243,8 +243,36 @@ static void gen(Node *node) {
     case ND_ADD:
         printf("    add rax, rdi\n");
         break;
+    case ND_PTR_ADD:
+        printf("    imul rdi, 8\n");  // この数値(rdi)はアドレスなので、8倍する
+        printf("    add rax, rdi\n"); // num + num の形
+        break;
     case ND_SUB:
         printf("    sub rax, rdi\n");
+        break;
+    case ND_PTR_SUB:
+        printf("    imul rdi, 8\n");  // この数値(rdi)はアドレスなので、8倍する
+        printf("    sub rax, rdi\n"); // num - num の形
+        break;
+    case ND_PTR_DIFF:
+        /*
+            rax: dividend
+            rdi: divisor
+
+            cqo: raxに入っている64ビットの値を128ビットに伸ばしてRDXとRAXにセットする(RDX:RAX)
+            idiv: 符号あり除算命令(Signed division)
+            ・RDXとRAXを取ってそれを合わせたものを128ビット整数とみなし(RDX:RAX)それを引数レジスタの64ビットの値(SRC)で割る
+                tmp = (RDX:RAX) / SRC
+            ・商をRAXへ、あまりをRDXにセットする
+                RAX = tmp
+                RDX = RDE:RAX SignedModulus SRC
+        */
+        // 被除数(この場合はraxの値)をセット
+        printf("    sub rax, rdi\n"); // rax = rax - rdi
+        printf("    cqo\n");          // rax => (RDX:RAX)
+        printf("    mov rdi, 8\n");   // 8をrdiにコピーする
+        printf("    idiv rdi\n");     // divide rax by rdi(=8)(引き算の結果は欲しい結果の8倍の値なので)
+        // 欲しい結果はraxにセットされている
         break;
     case ND_MUL:
         printf("    imul rax, rdi\n");
