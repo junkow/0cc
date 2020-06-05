@@ -33,6 +33,7 @@ struct Token {
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
 void error_tok(Token *tok, char *fmt, ...);
+Token *peek(char *s);
 Token *consume(char *op);
 Token *consume_ident(void);
 void expect(char *op);
@@ -57,6 +58,7 @@ typedef struct Var Var;
 struct Var {
     char *name;     // 変数の名前
     int offset;     // RBPからのオフセット
+    Type *ty;       // Type
 };
 
 // 変数のリストを表す構造体
@@ -92,6 +94,7 @@ typedef enum {
     ND_EXPR_STMT, // Expression statement
     ND_VAR,       // local variable
     ND_NUM,       // integer
+    ND_NULL,      // Empty statement
 } NodeKind;
 
 // 抽象構文木(AST)のノードの型
@@ -152,7 +155,10 @@ struct Type {
     Type *base;
 };
 
+extern Type *int_type;
+
 bool is_integer(Type *ty);
+Type *pointer_to(Type *base);
 void add_type(Node *node);
 
 //

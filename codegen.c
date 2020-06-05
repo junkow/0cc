@@ -42,12 +42,14 @@ static void store(void) {
 // 抽象構文木からアセンブリコードを生成する
 static void gen(Node *node) {
     switch(node->kind) {
+    case ND_NULL: // Empty statement
+        return;
     case ND_NUM:
         printf("    push %ld\n", node->val);
         return;
     case ND_EXPR_STMT:
         // expression (式):  値を一つ必ず残す
-        // statement (宣言):  値を必ず何も残さない
+        // statement (宣言, 文):  値を必ず何も残さない
         gen(node->lhs);
         printf("#----- Expression statement\n");
         printf("    add rsp, 8\n");

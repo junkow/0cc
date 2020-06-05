@@ -16,9 +16,10 @@ static Var *find_var(Token *tok) {
     return NULL;
 }
 
-static Var *new_lvar(char *name) {
+static Var *new_lvar(char *name, Type *ty) {
     Var *var = calloc(1, sizeof(Var));
     var->name = name;
+    var->ty = ty;
 
     // ローカル変数と関数の引数を両方含んだ変数のリストを作成
     VarList *vl = calloc(1, sizeof(VarList));
@@ -69,6 +70,7 @@ static Node *new_node_num(long value, Token *tok) {
 // 返されるノードの左側の枝のほうが深くなる
 static VarList *read_func_params(void);
 static Function *function(void);
+static Node *declaration(void);
 static Node *stmt(void);
 static Node *stmt2(void);
 static Node *expr(void);
@@ -93,19 +95,36 @@ Function *program(void) {
     return head.next;
 }
 
+// basetype = "int" "*"*
+// "int"と"*"が0以上の組み合わせ
+static Type *basetype(void) {
+    expect("int"); // tokenがintでなければエラー
+
+    Type *ty = int_type; // kindにTY_INTを指定したTypeインスタンスのアドレス
+    while(consume("*"))
+        ty = pointer_to(ty);
+    return ty;
+}
+
+static VarList *read_func_param(void) {
+    VarList *vl = calloc(1, sizeof(VarList));
+    Type *ty = basetype(); // typeを作成
+    vl->var = new_lvar(expect_ident(), ty); // localsリストを更新しつつ、新しいVarインスタンスを返す
+    return vl;
+}
+
 static VarList *read_func_params(void) {
     if(consume(")"))
         return NULL;
 
     // ここでは関数の引数のみのリストが作成される
-    VarList *head = calloc(1, sizeof(VarList));
-    head->var = new_lvar(expect_ident()); // localsリストを更新しつつ、新しいVarインスタンスを返す
+
+    VarList *head = read_func_param();
     VarList *cur = head;
 
     while(!consume(")")) {
         expect(",");
-        cur->next = calloc(1, sizeof(VarList));
-        cur->next->var = new_lvar(expect_ident());
+        cur->next = read_func_param();
         cur = cur->next;
     }
 
@@ -113,12 +132,15 @@ static VarList *read_func_params(void) {
 }
 
 /* "関数定義"は {...} の外側 `foo() {...}` のfoo()の部分の解析 */
-// function = ident "(" params? ")" "{" stmt* "}"
-// params   = ident ("," ident)*
+// function = basetype ident "(" params? ")" "{" stmt* "}"
+// params   = param ("," param)*
+// param    = basetype ident
+// e.g. int foo (int bar, int foobar)
 static Function *function() {
     locals = NULL;
 
     Function *fn = calloc(1, sizeof(Function));
+    basetype(); // typeを作成
     fn->name = expect_ident();
 
     expect("(");
@@ -138,6 +160,32 @@ static Function *function() {
     return fn;
 }
 
+// 宣言
+// declaration = basetype ident ("=" expr)? ";"
+/*
+    e.g.
+    int a;
+    int a = 5;
+    int a = 1+3;
+    int a = (1 <= 3);
+*/
+static Node *declaration(void) {
+    Token *tok = token;
+    Type *ty = basetype();
+    Var *var = new_lvar(expect_ident(), ty);
+
+    if(consume(";"))
+        return new_node(ND_NULL, tok);
+    
+    expect("=");
+    Node *lhs = new_node_var(var, tok);
+    Node *rhs = expr();
+    expect(";");
+
+    Node *node = new_binary(ND_ASSIGN, lhs, rhs, tok);
+    return new_unary(ND_EXPR_STMT, node, tok); // 式文の単項になる
+}
+
 static Node *read_expr_stmt(void) {
     Token *tok = token; // global変数:token(各tokenの連結リスト)のアドレス
     return new_unary(ND_EXPR_STMT, expr(), tok);
@@ -155,6 +203,7 @@ static Node *stmt(void) {
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | "{" stmt* "}"
+//      | declaration
 //      | expr ";"
 static Node *stmt2(void) {
     Token *tok;
@@ -225,6 +274,11 @@ static Node *stmt2(void) {
         return node;
     }
 
+    if(tok = peek("int")) {
+        // declaration()内のbasetype関数でtokenの"int"をチェックしたいので、トークンを進めないpeekを使う
+        return declaration();
+    }
+
     // expression statement
     Node *node = read_expr_stmt();
     expect(";");
@@ -283,6 +337,7 @@ static Node *relational(void) {
 }
 
 static Node *new_add(Node *lhs, Node *rhs, Token *tok) {
+    // 数値どうしか、アドレスの入った計算か判断するためにtypeを付与して判別
     add_type(lhs);
     add_type(rhs);
 
@@ -297,6 +352,7 @@ static Node *new_add(Node *lhs, Node *rhs, Token *tok) {
 }
 
 static Node *new_sub(Node *lhs, Node *rhs, Token *tok) {
+    // 数値どうしか、アドレスの入った計算か判断するためにtypeを付与して判別
     add_type(lhs);
     add_type(rhs);
 
@@ -401,8 +457,8 @@ static Node *primary(void) {
         // Variable
         Var *var = find_var(tok); //local variableが既存かどうかをリストから調べる
         if(!var) {
-            // var == NULLなので、そのまま代入できる
-            var = new_lvar(strndup(tok->str, tok->len));
+            // 関数の引数以外の変数のVarインスタンスは、declaration関数内で作成済みなので、ここで作成しなくて良い
+            error_tok(tok, "undefined variable");
         }
 
         // nodeとvarの紐付け
