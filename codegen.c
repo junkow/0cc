@@ -16,7 +16,7 @@ static void gen_addr(Node *node) {
         printf("    lea rax, [rbp-%d]\n", node->var->offset); // lea : load effective address
         printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
         return;
-    case ND_DEREF: // 左辺値に間接参照がきた場合に処理できるようにする
+    case ND_DEREF: // 左辺値に逆参照がきた場合に処理できるようにする
         gen(node->lhs); // 左辺を展開する
         return;
     }

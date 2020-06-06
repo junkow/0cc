@@ -57,7 +57,7 @@ void add_type(Node *node) {
     case ND_ADDR:      // unary & (単項, アドレス)
         node->ty = pointer_to(node->lhs->ty);
         return;
-    case ND_DEREF:     // unary * (単項, 間接参照)
+    case ND_DEREF:     // unary * (単項, 逆参照)
         if(node->lhs->ty->kind != TY_PTR) // 左辺値のtypeの種類がpointerでない場合はエラー
             error_tok(node->tok, "invalid pointer dereference");
         node->ty = node->lhs->ty->base;
