@@ -114,6 +114,9 @@ static Type *read_type_suffix(Type *base) {
         return base;
     int sz = expect_number();
     expect("]");
+    
+    base = read_type_suffix(base); // 再起的に関数を呼ぶだけで配列の配列を実装できる!
+
     return array_of(base, sz);
 }
 
