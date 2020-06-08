@@ -24,6 +24,12 @@ static void gen_addr(Node *node) {
     error_tok(node->tok, "not an lvalue");
 }
 
+static void gen_lval(Node *node) {
+    if(node->ty->kind == TY_ARRAY) // arrayの場合は左辺値ではない(アドレスが取れない?)のでエラー
+        error_tok(node->tok, "not an lvalue");
+    gen_addr(node);
+}
+
 static void load(void) {
     printf("#----- Load a value from the memory address.\n");
     printf("    pop rax\n"); // スタックトップからローカル変数のアドレスをpopしてraxに保存する
@@ -57,11 +63,12 @@ static void gen(Node *node) {
     case ND_VAR: // 変数の値の参照
         gen_addr(node);
 
-        // メモリアドレスからデータをレジスタにload
-        load();
+        if(node->ty->kind != TY_ARRAY)
+            load(); // メモリアドレスからデータをレジスタにload
         return;
     case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
-        gen_addr(node->lhs); // =>最終的に計算結果を入れたraxの値(アドレス)がスタックにpushされる ...push rax
+        // 左辺のkindがTY_ARRAYではない場合のみ、左辺値として処理できる
+        gen_lval(node->lhs); // =>最終的に計算結果を入れたraxの値(アドレス)がスタックにpushされる ...push rax
         gen(node->rhs); // =>最終的に計算結果を入れたraxの値(右辺値)がスタックにpushされる ...push rax
 
         // メモリアドレスへのデータのstore
@@ -231,7 +238,8 @@ static void gen(Node *node) {
         return;
     case ND_DEREF:
         gen(node->lhs);
-        load();
+        if(node->ty->kind != TY_ARRAY)
+            load();
         return;
     }
 
@@ -246,14 +254,14 @@ static void gen(Node *node) {
         printf("    add rax, rdi\n");
         break;
     case ND_PTR_ADD:
-        printf("    imul rdi, 8\n");  // この数値(rdi)はアドレスなので、8倍する
+        printf("    imul rdi, %d\n", node->ty->base->size);  // この数値(rdi)はアドレスなので、8倍する
         printf("    add rax, rdi\n"); // num + num の形
         break;
     case ND_SUB:
         printf("    sub rax, rdi\n");
         break;
     case ND_PTR_SUB:
-        printf("    imul rdi, 8\n");  // この数値(rdi)はアドレスなので、8倍する
+        printf("    imul rdi, %d\n", node->ty->base->size);  // この数値(rdi)はアドレスなので、8倍する
         printf("    sub rax, rdi\n"); // num - num の形
         break;
     case ND_PTR_DIFF:
@@ -272,7 +280,7 @@ static void gen(Node *node) {
         // 被除数(この場合はraxの値)をセット
         printf("    sub rax, rdi\n"); // rax = rax - rdi
         printf("    cqo\n");          // rax => (RDX:RAX)
-        printf("    mov rdi, 8\n");   // 8をrdiにコピーする
+        printf("    mov rdi, %d\n", node->lhs->ty->base->size);   // 8をrdiにコピーする
         printf("    idiv rdi\n");     // divide rax by rdi(=8)(引き算の結果は欲しい結果の8倍の値なので)
         // 欲しい結果はraxにセットされている
         break;

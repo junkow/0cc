@@ -18,8 +18,6 @@ int main(int argc, char **argv) {
         int offset = 0;
         // 関数内のローカル変数
         for(VarList *vl = fn->locals; vl; vl = vl->next) {
-            // offset += 8;
-            // vl->var->offset = offset;
             Var *var = vl->var;
             offset += var->ty->size;
             var->offset = offset;

@@ -101,15 +101,20 @@ Function *program(void) {
 static Type *basetype(void) {
     expect("int"); // tokenがintでなければエラー
 
-    Type *ty = int_type; // kindにTY_INTを指定したTypeインスタンスのアドレス
+    Type *ty = int_type; // kindにTY_INTを設定したTypeインスタンスのアドレス
     while(consume("*"))
-        // もしderefの記号`*`があったら、kindにTY_PTRを指定したTypeになる
+        // もしderefの記号`*`があったら、kindにTY_PTRを設定したTypeになる
         ty = pointer_to(ty);
     return ty;
 }
 
+// 配列ならbaseを設定して、arrayのTypeインスタンスを返す、それ以外ならbaseをそのまま返す
 static Type *read_type_suffix(Type *base) {
-    return base;
+    if(!consume("["))
+        return base;
+    int sz = expect_number();
+    expect("]");
+    return array_of(base, sz);
 }
 
 static VarList *read_func_param(void) {
@@ -149,7 +154,7 @@ static Function *function() {
     locals = NULL;
 
     Function *fn = calloc(1, sizeof(Function));
-    basetype(); // basetypeを作成
+    basetype(); // basetypeを作成(関数の返り値の型) tokenがintでない場合のエラーチェック?
     fn->name = expect_ident();
 
     expect("(");
@@ -170,13 +175,15 @@ static Function *function() {
 }
 
 // 宣言
-// declaration = basetype ident ("=" expr)? ";"
+// declaration = basetype ident ("[" num "]")* ("=" expr)? ";"
 /*
     e.g.
     int a;
     int a = 5;
     int a = 1+3;
     int a = (1 <= 3);
+    int a[3];
+    int a[3][2];
 */
 static Node *declaration(void) {
     Token *tok = token;

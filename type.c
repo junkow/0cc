@@ -1,13 +1,14 @@
 #include "9cc.h"
-
-Type *int_type = &(Type){TY_INT, 8};
+// 複合リテラル
 // kindにTY_INT, size 8を指定したType型インスタンスのアドレス
+Type *int_type = &(Type){TY_INT, 8};
 
 bool is_integer(Type *ty) {
     return ty->kind == TY_INT;
 }
 
-// pointerについてのType型のインスタンスを作成してそれを返す
+// pointerのTypeのインスタンスを作成してそれを返す
+// もとのtypeのbaseから、baseプロパティを指定する
 Type *pointer_to(Type *base) {
     Type *ty = calloc(1, sizeof(Type));
     ty->kind = TY_PTR;
@@ -16,6 +17,18 @@ Type *pointer_to(Type *base) {
     return ty;
 }
 
+// arrayのTypeのインスタンスを作成してそれを返す
+// もとのtypeのbaseから、sizeとbaseを指定する
+Type *array_of(Type *base, int len) {
+    Type *ty = calloc(1, sizeof(Type));
+    ty->kind = TY_ARRAY;
+    ty->size = base->size * len;
+    ty->base = base;
+    ty->array_len = len;
+    return ty;
+}
+
+// nodeに型を付与する
 void add_type(Node *node) {
     if( !node || node->ty )
         return;
@@ -56,10 +69,15 @@ void add_type(Node *node) {
         node->ty = node->var->ty;
         return;
     case ND_ADDR:      // unary & (単項, アドレス)
-        node->ty = pointer_to(node->lhs->ty); // kindがTY_PTRの型がnodeの型になる
+        // array型の場合その中身の要素の型が知りたい。node->lhs->tyがarray型なので、配列の中身の要素についてはnode->lhs->ty->baseにある
+        if(node->lhs->ty->kind == TY_ARRAY)
+            node->ty = pointer_to(node->lhs->ty->base);
+        else
+            node->ty = pointer_to(node->lhs->ty);  // array以外ならnode->lhs->tyがそのbaseにあたる
         return;
     case ND_DEREF:     // unary * (単項, 逆参照)
-        if (node->lhs->ty->kind != TY_PTR) // 左辺値の型のkindがTY_PTRでない場合はエラー
+        // if (node->lhs->ty->kind != TY_PTR) // 左辺値の型のkindがTY_PTRでない場合はエラー
+        if(!node->lhs->ty->base) // 左辺値の型にbaseの型が指定されていなければエラー たとえばint型にbaseは指定されていない
             error_tok(node->tok, "invalid pointer dereference");
         node->ty = node->lhs->ty->base;
         return;
