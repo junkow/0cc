@@ -33,6 +33,8 @@ assert 3 'int main() { int foo = 3; return *&foo; }'
 assert 8 'int main() { int foo = 3; int bar = 5; return (*&foo)+(*&bar); }'
 assert 0 'int main() { int x = 3; int y = &x; return &x+1 == y+1; }'
 assert 1 'int main() { int x = 3; int y = &x; return &x+1 == y+(1*8); }'
+assert 7 'int main() { int x = 3; int y = 5; *(&y-1) = 7; return x; }'
+assert 8 'int main() { int x = 3; int y = 5; return foo(&x, y); } int foo(int *x, int y) { return *x + y; }'
 ## assert 3 'int main() { int x = 3; int y = &x; int z = &y; return **z; }'　このままだとinvalid pointer dereferenceのエラーになる
 ## ポインタを代入する場合は*を変数名の前に付与する
 assert 3 'int main() { int x = 3; int *y = &x; int **z = &y; return **z; }' # **はポインタのポインタ

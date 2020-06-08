@@ -1,17 +1,18 @@
 #include "9cc.h"
 
-Type *int_type = &(Type){TY_INT};
-// kindにTY_INTを指定したType型インスタンスのアドレス?
+Type *int_type = &(Type){TY_INT, 8};
+// kindにTY_INT, size 8を指定したType型インスタンスのアドレス
 
 bool is_integer(Type *ty) {
     return ty->kind == TY_INT;
 }
 
-// pointer型のインスタンスを作成してそれを返す
+// pointerについてのType型のインスタンスを作成してそれを返す
 Type *pointer_to(Type *base) {
     Type *ty = calloc(1, sizeof(Type));
     ty->kind = TY_PTR;
     ty->base = base;
+    ty->size = 8;
     return ty;
 }
 
@@ -49,16 +50,16 @@ void add_type(Node *node) {
     case ND_PTR_ADD:   // ptr + num or num + ptr
     case ND_PTR_SUB:   // ptr - num or num - ptr
     case ND_ASSIGN:    // = : assign
-        node->ty = node->lhs->ty;
+        node->ty = node->lhs->ty; // 左辺値の型がnodeの型になる
         return;
     case ND_VAR:
         node->ty = node->var->ty;
         return;
     case ND_ADDR:      // unary & (単項, アドレス)
-        node->ty = pointer_to(node->lhs->ty);
+        node->ty = pointer_to(node->lhs->ty); // kindがTY_PTRの型がnodeの型になる
         return;
     case ND_DEREF:     // unary * (単項, 逆参照)
-        if(node->lhs->ty->kind != TY_PTR) // 左辺値のtypeの種類がpointerでない場合はエラー
+        if (node->lhs->ty->kind != TY_PTR) // 左辺値の型のkindがTY_PTRでない場合はエラー
             error_tok(node->tok, "invalid pointer dereference");
         node->ty = node->lhs->ty->base;
         return;

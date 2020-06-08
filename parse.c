@@ -95,6 +95,7 @@ Function *program(void) {
     return head.next;
 }
 
+// baseType(Type構造体のbase propertyにあたる)を返す
 // basetype = "int" "*"*
 // "int"と"*"が0以上の組み合わせ
 static Type *basetype(void) {
@@ -102,14 +103,22 @@ static Type *basetype(void) {
 
     Type *ty = int_type; // kindにTY_INTを指定したTypeインスタンスのアドレス
     while(consume("*"))
+        // もしderefの記号`*`があったら、kindにTY_PTRを指定したTypeになる
         ty = pointer_to(ty);
     return ty;
 }
 
+static Type *read_type_suffix(Type *base) {
+    return base;
+}
+
 static VarList *read_func_param(void) {
+    Type *ty = basetype(); // 型を作成
+    char *name = expect_ident();
+    ty = read_type_suffix(ty);
+
     VarList *vl = calloc(1, sizeof(VarList));
-    Type *ty = basetype(); // typeを作成
-    vl->var = new_lvar(expect_ident(), ty); // localsリストを更新しつつ、新しいVarインスタンスを返す
+    vl->var = new_lvar(name, ty); // localsリストを更新しつつ、新しいVarインスタンスを返す
     return vl;
 }
 
@@ -140,7 +149,7 @@ static Function *function() {
     locals = NULL;
 
     Function *fn = calloc(1, sizeof(Function));
-    basetype(); // typeを作成
+    basetype(); // basetypeを作成
     fn->name = expect_ident();
 
     expect("(");
@@ -172,7 +181,9 @@ static Function *function() {
 static Node *declaration(void) {
     Token *tok = token;
     Type *ty = basetype();
-    Var *var = new_lvar(expect_ident(), ty);
+    char *name = expect_ident();
+    ty = read_type_suffix(ty);
+    Var *var = new_lvar(name, ty);
 
     if(consume(";"))
         return new_node(ND_NULL, tok);
