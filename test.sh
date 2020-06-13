@@ -28,6 +28,17 @@ assert() {
     fi
 }
 
+# sizeof
+assert 8 'int main() { int x; return sizeof(x); }'
+assert 8 'int main() { int x; return sizeof x; }'
+assert 8 'int main() { int *x; return sizeof(x); }'
+assert 32 'int main() { int x[4]; return sizeof(x); }'
+assert 96 'int main() { int x[3][4]; return sizeof(x); }' # 3*4*8
+assert 32 'int main() { int x[3][4]; return sizeof(*x); }' # 4*8
+assert 8 'int main() { int x[3][4]; return sizeof(**x); }' # 1*8
+assert 9 'int main() { int x[3][4]; return sizeof(**x) + 1; }'
+assert 9 'int main() { int x[3][4]; return sizeof **x + 1; }'
+assert 8 'int main() { int x[3][4]; return sizeof(**x + 1); }'
 # []operator
 assert 0 'int main() { int x[2][3]; int *y = x; y[0] = 0; return x[0][0]; }'
 assert 1 'int main() { int x[2][3]; int *y = x; y[1] = 1; return x[0][1]; }'

@@ -471,16 +471,24 @@ static Node *func_args(void) {
     return head;
 }
 
-// primary = ("(" expr ")")* | ident func-args | num 
+// primary = ("(" expr ")")* | "sizeof" unary | ident func-args | num 
 static Node *primary(void) {
+    Token *tok;
+
     if(consume("(")) { // 次のトークンが"("なら、"(" expr ")"のはず
         Node *node = expr();
         expect(")");
         return node;
     }
 
+    // tokenが"sizeof"の文字列から始まる場合
+    if(tok = consume("sizeof")) {
+        Node *node = unary();
+        add_type(node);
+        return new_node_num(node->ty->size, tok);
+    }
+
     // 識別子の場合
-    Token *tok;
     if(tok = consume_ident()) {
         // Function call
         if(consume("(")) {
