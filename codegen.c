@@ -55,7 +55,7 @@ static void gen(Node *node) {
         return;
     case ND_EXPR_STMT:
         // expression (式):  値を一つ必ず残す
-        // statement (宣言, 文):  値を必ず何も残さない
+        // statement (宣言):  値を必ず何も残さない
         gen(node->lhs);
         printf("#----- Expression statement\n");
         printf("    add rsp, 8\n");

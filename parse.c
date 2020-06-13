@@ -80,6 +80,7 @@ static Node *relational(void);
 static Node *add(void);
 static Node *mul(void);
 static Node *unary(void);
+static Node *postfix(void);
 static Node *primary(void);
 
 // program = function*
@@ -204,7 +205,7 @@ static Node *declaration(void) {
     expect(";");
 
     Node *node = new_binary(ND_ASSIGN, lhs, rhs, tok);
-    return new_unary(ND_EXPR_STMT, node, tok); // 式文の単項になる
+    return new_unary(ND_EXPR_STMT, node, tok); // 式宣言の単項になる
 }
 
 static Node *read_expr_stmt(void) {
@@ -263,7 +264,6 @@ static Node *stmt2(void) {
         Node *node = new_node(ND_FOR, tok);
         expect("(");
         if(!consume(";")) {
-            // TODO: あとで考える
             node->init = read_expr_stmt(); // 式宣言
             expect(";");
         }
@@ -272,7 +272,6 @@ static Node *stmt2(void) {
             expect(";");
         }
         if(!consume(")")) {
-            // TODO: あとで考える
             node->inc = read_expr_stmt(); // 式宣言
             expect(")");
         }
@@ -418,7 +417,7 @@ static Node *mul(void) {
 }
 
 // unary: 単項
-// unary = ("+" | "-" | "&" | "*")? unary | primary
+// unary = ("+" | "-" | "&" | "*")? unary | postfix
 static Node *unary(void) {
     Token *tok;
     if(consume("+")) {
@@ -434,7 +433,23 @@ static Node *unary(void) {
     if(tok = consume("*"))
         return new_unary(ND_DEREF, unary(), tok);
 
-    return primary();
+    return postfix();
+}
+
+// 配列の表現, []演算子を追加
+// postfix = primary ("[" expr "]")*
+static Node *postfix(void) {
+    Node *node = primary();
+    Token *tok;
+
+    while(tok = consume("[")) {
+        // x[y] is short for *(x+y)
+        Node *exp = new_add(node, expr(), tok); // アドレスの足し算になるので、new_addの方を使う
+        expect("]");
+        node = new_unary(ND_DEREF, exp, tok);
+    }
+
+    return node;
 }
 
 /* 
