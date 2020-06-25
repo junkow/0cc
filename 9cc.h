@@ -146,9 +146,9 @@ Function *program(void);
 //
 
 typedef enum { 
-    TY_INT,
-    TY_PTR,
-    TY_ARRAY,
+    TY_INT,   // 0
+    TY_PTR,   // 1
+    TY_ARRAY, // 2
 } TypeKind;
 
 struct Type {
@@ -157,6 +157,10 @@ struct Type {
     Type *base;
     int array_len;
 };
+// e.g.
+// int a[2];と宣言した場合
+// ty->kind = TY_ARRAY
+// ty->base->kind = TY_INT
 
 extern Type *int_type;
 

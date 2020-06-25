@@ -33,9 +33,9 @@ assert 8 'int main() { int x; return sizeof(x); }'
 assert 8 'int main() { int x; return sizeof x; }'
 assert 8 'int main() { int *x; return sizeof(x); }'
 assert 32 'int main() { int x[4]; return sizeof(x); }'
-assert 96 'int main() { int x[3][4]; return sizeof(x); }' # 3*4*8
-assert 32 'int main() { int x[3][4]; return sizeof(*x); }' # 4*8
-assert 8 'int main() { int x[3][4]; return sizeof(**x); }' # 1*8
+assert 96 'int main() { int x[3][4]; return sizeof(x); }' # 8*3*4
+assert 32 'int main() { int x[3][4]; return sizeof(*x); }' # 8*4
+assert 8 'int main() { int x[3][4]; return sizeof(**x); }' # 8*1
 assert 9 'int main() { int x[3][4]; return sizeof(**x) + 1; }'
 assert 9 'int main() { int x[3][4]; return sizeof **x + 1; }'
 assert 8 'int main() { int x[3][4]; return sizeof(**x + 1); }'
@@ -46,21 +46,25 @@ assert 2 'int main() { int x[2][3]; int *y = x; y[2] = 2; return x[0][2]; }'
 assert 3 'int main() { int x[2][3]; int *y = x; y[3] = 3; return x[1][0]; }'
 assert 4 'int main() { int x[2][3]; int *y = x; y[4] = 4; return x[1][1]; }'
 assert 5 'int main() { int x[2][3]; int *y = x; y[5] = 5; return x[1][2]; }'
-assert 6 'int main() { int x[2][3]; int *y = x; y[6] = 6; return x[2][0]; }'
 # arrays of arrays
-assert 0 'int main() { int x[2][3]; int *y = x; *y = 0; return **(x+0); }'
+assert 0 'int main() { int x[2][3]; int *y = x; *y = 0; return **x; }'
 assert 1 'int main() { int x[2][3]; int *y = x; *(y+1) = 1; return *(*(x+0)+1); }'
 assert 2 'int main() { int x[2][3]; int *y = x; *(y+2) = 2; return *(*(x+0)+2); }'
 assert 3 'int main() { int x[2][3]; int *y = x; *(y+3) = 3; return **(x+1); }'
 assert 4 'int main() { int x[2][3]; int *y = x; *(y+4) = 4; return *(*(x+1)+1); }'
 assert 5 'int main() { int x[2][3]; int *y = x; *(y+5) = 5; return *(*(x+1)+2); }'
-assert 6 'int main() { int x[2][3]; int *y = x; *(y+6) = 6; return **(x+2); }'
-assert 7 'int main() { int x[2][3]; int *y = x; *(y+7) = 7; return *(*(x+2)+1); }'
+# 配列の最後の要素+1はアドレスの演算まではできるが、dereferenceは未定義動作になる
+assert 1 'int main() { int x[2][3]; return **(x+1) == *(*(x+0)+3); }'
+assert 1 'int main() { int x[2][3]; int *y = x; return *(y+3) == *(*(x+0)+3); }'
+assert 1 'int main() { int x[2][3]; return *(*(x+1)+3) == **(x+2); }'
+assert 1 'int main() { int x[2][3]; int *y = x; return *(y+6) == **(x+2); }'
+assert 1 'int main() { int x[2][3]; int *y = x; return *(y+6) == *(*(x+1)+3); }'
 # one dimensional arrays
-assert 3 'int main() { int x[2]; int *y = &x; *y = 3; return *x; }'
+assert 3 'int main() { int x[2]; int *y = x; *y = 3; return *x; }'
 assert 3 'int main() { int x[3]; *x = 3; *(x+1) = 4; *(x+2) = 5; return *x; }'
 assert 4 'int main() { int x[3]; *x = 3; *(x+1) = 4; *(x+2) = 5; return *(x+1); }'
 assert 5 'int main() { int x[3]; *x = 3; *(x+1) = 4; *(x+2) = 5; return *(x+2); }'
+assert 1 'int main() { int x[3]; int *y = x; return *(y+2) == *(x+2); }'
 # "&"/"*"単項子の実装
 assert 3 'int main() { int foo = 3; return *&foo; }'
 assert 8 'int main() { int foo = 3; int bar = 5; return (*&foo)+(*&bar); }'

@@ -13,6 +13,11 @@ static void gen_addr(Node *node) {
     switch(node->kind) {
     case ND_VAR:
         printf("#----- Pushes the given node's memory address to the stack.\n");
+
+        // debug
+        // printf("var base kind: %d\n", node->var->ty->base->kind);
+
+        // srcオペランドのメモリアドレスを計算し、distオペランドにロードする
         printf("    lea rax, [rbp-%d]\n", node->var->offset); // lea : load effective address
         printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
         return;
@@ -25,7 +30,7 @@ static void gen_addr(Node *node) {
 }
 
 static void gen_lval(Node *node) {
-    if(node->ty->kind == TY_ARRAY) // arrayの場合は左辺値ではない(アドレスが取れない?)のでエラー
+    if(node->ty->kind == TY_ARRAY) // arrayの形のままの場合は左辺値ではない(アドレスが取れない)のでエラー
         error_tok(node->tok, "not an lvalue");
     gen_addr(node);
 }
@@ -55,7 +60,7 @@ static void gen(Node *node) {
         return;
     case ND_EXPR_STMT:
         // expression (式):  値を一つ必ず残す
-        // statement (宣言):  値を必ず何も残さない
+        // statement (文):  値を必ず何も残さない
         gen(node->lhs);
         printf("#----- Expression statement\n");
         printf("    add rsp, 8\n");
@@ -67,7 +72,7 @@ static void gen(Node *node) {
             load(); // メモリアドレスからデータをレジスタにload
         return;
     case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
-        // 左辺のkindがTY_ARRAYではない場合のみ、左辺値として処理できる
+        // 左辺のkindがTY_ARRAYではない場合のみ、左辺値として処理できる(arrayの形のままではどのアドレスに値を割り当てるかわからない)
         gen_lval(node->lhs); // =>最終的に計算結果を入れたraxの値(アドレス)がスタックにpushされる ...push rax
         gen(node->rhs); // =>最終的に計算結果を入れたraxの値(右辺値)がスタックにpushされる ...push rax
 

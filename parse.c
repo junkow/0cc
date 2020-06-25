@@ -178,7 +178,7 @@ static Function *function() {
     return fn;
 }
 
-// 宣言
+// 文
 // declaration = basetype ident ("[" num "]")* ("=" expr)? ";"
 /*
     e.g.
@@ -205,7 +205,7 @@ static Node *declaration(void) {
     expect(";");
 
     Node *node = new_binary(ND_ASSIGN, lhs, rhs, tok);
-    return new_unary(ND_EXPR_STMT, node, tok); // 式宣言の単項になる
+    return new_unary(ND_EXPR_STMT, node, tok); // 式文の単項になる
 }
 
 static Node *read_expr_stmt(void) {
@@ -213,7 +213,7 @@ static Node *read_expr_stmt(void) {
     return new_unary(ND_EXPR_STMT, expr(), tok);
 }
 
-// statement(宣言): 値を必ずなにも残さない
+// statement(文): 値を必ずなにも残さない
 static Node *stmt(void) {
     Node *node = stmt2();
     add_type(node);
@@ -264,7 +264,7 @@ static Node *stmt2(void) {
         Node *node = new_node(ND_FOR, tok);
         expect("(");
         if(!consume(";")) {
-            node->init = read_expr_stmt(); // 式宣言
+            node->init = read_expr_stmt(); // 式文
             expect(";");
         }
         if(!consume(";")) {
@@ -272,7 +272,7 @@ static Node *stmt2(void) {
             expect(";");
         }
         if(!consume(")")) {
-            node->inc = read_expr_stmt(); // 式宣言
+            node->inc = read_expr_stmt(); // 式文
             expect(")");
         }
         node->then = stmt();
