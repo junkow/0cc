@@ -13,10 +13,6 @@ static void gen_addr(Node *node) {
     switch(node->kind) {
     case ND_VAR:
         printf("#----- Pushes the given node's memory address to the stack.\n");
-
-        // debug
-        // printf("var base kind: %d\n", node->var->ty->base->kind);
-
         // srcオペランドのメモリアドレスを計算し、distオペランドにロードする
         printf("    lea rax, [rbp-%d]\n", node->var->offset); // lea : load effective address
         printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
