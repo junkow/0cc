@@ -14,13 +14,13 @@ static void gen_addr(Node *node) {
     case ND_VAR: {
         Var *var = node->var;
         if (var->is_local) {
-            printf("#----- Local variable");
+            printf("#----- Local variable\n");
             printf("#----- Pushes the given node's memory address to the stack.\n");
             // srcオペランドのメモリアドレスを計算し、distオペランドにロードする
             printf("    lea rax, [rbp-%d]\n", var->offset); // lea : load effective address
             printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
         } else {
-            printf("#----- Global variable");
+            printf("#----- Global variable\n");
             printf("    push offset %s\n", var->name);
         }
         return;

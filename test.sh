@@ -16,7 +16,7 @@ assert() {
 
     ./9cc "$input" > tmp.s
     # cc -o tmp tmp.s
-    cc -o tmp tmp.s tmp2.o
+    gcc -static -o tmp tmp.s tmp2.o
     ./tmp
     actual="$?"
 
