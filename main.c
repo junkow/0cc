@@ -10,10 +10,10 @@ int main(int argc, char **argv) {
     user_input = argv[1];
     token = tokenize();
     // トークナイズしたものをパースする(抽象構文木の形にする)
-    Function *prog = program(); // functionの連結リストが作成され、その先頭アドレス
+    Program *prog = program(); // functionの連結リストが作成され、その先頭アドレス
     // それぞれのfunctionインスタンスごとにnodeやローカル変数のリストがメンバとして含まれている
 
-    for(Function *fn = prog; fn; fn = fn->next) {
+    for(Function *fn = prog->fns; fn; fn = fn->next) {
         // ローカル変数にオフセットを割り当て
         int offset = 0;
         // 関数内のローカル変数

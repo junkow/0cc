@@ -28,6 +28,8 @@ assert() {
     fi
 }
 
+# global variable
+assert 0 'int x; int main() { return x; }'
 # sizeof
 assert 8 'int main() { int x; return sizeof(x); }'
 assert 8 'int main() { int x; return sizeof x; }'

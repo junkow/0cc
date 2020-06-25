@@ -53,12 +53,15 @@ extern char *user_input;
 //
 
 // 変数を連結リストで表す
-// ローカル変数
+// Variable
 typedef struct Var Var;
 struct Var {
     char *name;     // 変数の名前
-    int offset;     // RBPからのオフセット
     Type *ty;       // Type
+    bool is_local;  // local or global
+
+    // for local variable
+    int offset;     // RBPからのオフセット
 };
 
 // 変数のリストを表す構造体
@@ -139,7 +142,13 @@ struct Function {
     int stack_size;  // スタックサイズ
 };
 
-Function *program(void);
+// トップレベルのitemについての型
+typedef struct {
+    VarList *globals; // List of global variables
+    Function *fns;    // function
+} Program;
+
+Program *program(void);
 
 //
 // type.c
@@ -173,4 +182,4 @@ void add_type(Node *node);
 // codegen.c
 //
 
-void codegen(Function *prog);
+void codegen(Program *prog);

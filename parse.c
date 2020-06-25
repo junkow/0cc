@@ -1,11 +1,17 @@
 #include "9cc.h"
 
-// ローカル変数と引数を管理するリスト
-// ローカル変数と引数を区別せずにひとつの連結リストで管理できる
+// 変数をまとめるリスト
+// ローカル変数と引数をまとめるリスト
+// パーズ中に作成されたすべてのlocal variableインスタンスをまとめる
 static VarList *locals;
+// global変数をまとめるリスト
+static VarList *globals;
 
+// 変数を見つける
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
+// local変数=>global変数の順で検索することで、local変数が同名のglobal変数を隠すという動きを実装できる
 static Var *find_var(Token *tok) {
+    // local変数から名前でlookup
     for(VarList *vl = locals; vl; vl = vl->next) {
         Var *var = vl->var;
         if(strlen(var->name) == tok->len && !strncmp(tok->str, var->name, tok->len)) {
@@ -13,19 +19,50 @@ static Var *find_var(Token *tok) {
             return var;
         }
     }
+
+    // local変数のリストになければglobal変数のリストから名前でlookup
+    for(VarList *vl = globals; vl; vl = vl->next) {
+        Var *var = vl->var;
+        if(strlen(var->name) == tok->len && !strncmp(tok->str, var->name, tok->len)) {
+            // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
+            return var;
+        }
+    }
+
     return NULL;
 }
 
-static Var *new_lvar(char *name, Type *ty) {
+// 変数を作成
+static Var *new_var(char *name, Type *ty, bool is_local) {
     Var *var = calloc(1, sizeof(Var));
     var->name = name;
     var->ty = ty;
+    var->is_local = is_local;
+
+    return var;
+}
+
+// local変数を作成
+static Var *new_lvar(char *name, Type *ty) {
+    Var *var = new_var(name, ty, true);
 
     // ローカル変数と関数の引数を両方含んだ変数のリストを作成
     VarList *vl = calloc(1, sizeof(VarList));
     vl->var = var;
     vl->next = locals; // 関数内のローカル変数(または引数)のインスタンス(VarList構造体)を作成して今のlocalsリストにつなげる
     locals = vl; // locals変数が常にVarListの連結リストの先頭を指すようにする
+
+    return var;
+}
+
+// global変数を作成
+static Var *new_gvar(char *name, Type *ty) {
+    Var *var = new_var(name, ty, false);
+
+    VarList *vl = calloc(1, sizeof(VarList));
+    vl->var = var;
+    vl->next = globals;
+    globals = vl;
 
     return var;
 }
@@ -68,8 +105,12 @@ static Node *new_node_num(long value, Token *tok) {
 
 // 左結合の演算子をパーズする関数
 // 返されるノードの左側の枝のほうが深くなる
-static VarList *read_func_params(void);
 static Function *function(void);
+static Type *read_type_suffix(Type *base);
+static Type *basetype(void);
+static void global_var(void);
+static VarList *read_func_params(void);
+
 static Node *declaration(void);
 static Node *stmt(void);
 static Node *stmt2(void);
@@ -83,17 +124,54 @@ static Node *unary(void);
 static Node *postfix(void);
 static Node *primary(void);
 
+// Determine whether the next top-level item is a function
+// or a global variable by looking ahead inpit tokens.
+// トップレベルのitemについて、トークンの一つ先を読んでfunctionかglobal変数かを決定する
+// e.g.
+// int *foo : global variable
+// int foo[10] : global variable
+// int *foo () {} : function
+// int foo() {} : function
+static bool is_function(void) {
+    Token *tok = token;
+    basetype();
+    
+    bool isfunc = consume_ident() && consume("(");
+    token = tok; // 読み進めたトークンを元に戻す
+    return isfunc;
+}
+
 // program = function*
-Function *program(void) {
+Program *program(void) {
     Function head = {};
     Function *cur = &head;
+    globals = NULL; // globals変数を初期化
 
     while(!at_eof()) {
-        cur->next = function();
-        cur = cur->next;
+        if ( is_function() ) {
+            cur->next = function();
+            cur = cur->next;
+        } else {
+            // global変数を作成
+            global_var();
+        }
     }
 
-    return head.next;
+    Program *prog = calloc(1, sizeof(Program));
+    prog->globals = globals;
+    prog->fns =  head.next;
+
+    return prog;
+}
+
+// global変数
+// global-var = basetype ident ("[" num "]")* ";"
+static void global_var(void) {
+    Type *ty =  basetype();
+    char *name = expect_ident();
+    ty = read_type_suffix(ty);
+    expect(";");
+    new_gvar(name, ty);
 }
 
 // baseType(Type構造体のbase propertyにあたる)を返す

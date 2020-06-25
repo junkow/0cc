@@ -11,12 +11,20 @@ static void gen(Node *node);
 // ローカル変数のアドレスの取得
 static void gen_addr(Node *node) {
     switch(node->kind) {
-    case ND_VAR:
-        printf("#----- Pushes the given node's memory address to the stack.\n");
-        // srcオペランドのメモリアドレスを計算し、distオペランドにロードする
-        printf("    lea rax, [rbp-%d]\n", node->var->offset); // lea : load effective address
-        printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
+    case ND_VAR: {
+        Var *var = node->var;
+        if (var->is_local) {
+            printf("#----- Local variable");
+            printf("#----- Pushes the given node's memory address to the stack.\n");
+            // srcオペランドのメモリアドレスを計算し、distオペランドにロードする
+            printf("    lea rax, [rbp-%d]\n", var->offset); // lea : load effective address
+            printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
+        } else {
+            printf("#----- Global variable");
+            printf("    push offset %s\n", var->name);
+        }
         return;
+    }
     case ND_DEREF: // 左辺値に逆参照がきた場合に処理できるようにする
         gen(node->lhs); // 左辺を展開する
         return;
@@ -120,6 +128,10 @@ static void gen(Node *node) {
     case ND_FOR: {
         int seq = labelseq++;
         /*
+            expression statement: 文 => 値を残してはいけない
+            - 式を評価して、結果を捨てる役割
+            - 必ず値が残ってしまう「式」という存在を、値を残さない「文」という存在に変換する
+
             for(A;B;C) D
             A: initialize  expression statement
             B: condition   expression
@@ -322,11 +334,20 @@ static void gen(Node *node) {
     printf("    push rax\n");
 }
 
-void codegen(Function *prog) {
-    // アセンブリの前半部分
-    printf(".intel_syntax noprefix\n");
+static void emit_data(Program *prog) {
+    printf(".data\n");
 
-    for(Function *fn = prog; fn; fn = fn->next) {
+    for(VarList *vl = prog->globals; vl; vl = vl->next) {
+        Var *var = vl->var;
+        printf("%s:\n", var->name);
+        printf("    .zero %d\n", var->ty->size);
+    }
+}
+
+static void emit_text(Program *prog) {
+    printf(".text\n");
+
+    for(Function *fn = prog->fns; fn; fn = fn->next) {
         printf(".global %s\n", fn->name);
         printf("%s:\n", fn->name);
         funcname = fn->name;
@@ -344,9 +365,7 @@ void codegen(Function *prog) {
             printf("    mov [rbp-%d], %s\n", var->offset, argreg[i++]);
         }
 
-        // printf("    mov [rbp-8],  rdi\n");
-        // printf("    mov [rbp-16], rsi\n");
-
+        // Emit code
         for (Node *node = fn->node; node; node = node->next) {
             // 抽象構文木を降りながらコード生成
             gen(node);
@@ -359,4 +378,11 @@ void codegen(Function *prog) {
         printf("    pop rbp\n");
         printf("    ret\n");
     }
+}
+
+void codegen(Program *prog) {
+    // アセンブリの前半部分
+    printf(".intel_syntax noprefix\n");
+    emit_data(prog);
+    emit_text(prog);
 }
