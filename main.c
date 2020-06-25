@@ -1,5 +1,10 @@
 #include "9cc.h"
 
+int align_to(int n, int align) {
+    // TODO: 後で確認する
+    return (n + align + 1) & ~(align-1);
+}
+
 int main(int argc, char **argv) {
     if(argc != 2) {
         fprintf(stderr, "引数の個数が正しくありません\n");
@@ -22,7 +27,7 @@ int main(int argc, char **argv) {
             offset += var->ty->size;
             var->offset = offset;
         }
-        fn->stack_size = offset;
+        fn->stack_size = align_to(offset, 8);
     }
     
     // アセンブリコード生成

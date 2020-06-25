@@ -1,7 +1,8 @@
 #include "9cc.h"
 
 // x86_64のABIで規定されている引数をセットするレジスタのリスト(引数の順番と同じ)
-static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static char *argreg1[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 static int labelseq = 1;
 static char *funcname;
@@ -39,18 +40,26 @@ static void gen_lval(Node *node) {
     gen_addr(node);
 }
 
-static void load(void) {
+static void load(Type *ty) {
     printf("#----- Load a value from the memory address.\n");
     printf("    pop rax\n"); // スタックトップからローカル変数のアドレスをpopしてraxに保存する
-    printf("    mov rax, [rax]\n"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
+    
+    if( ty->size == 1)
+        printf("    movsx rax, byte ptr [rax]\n");
+    else
+        printf("    mov rax, [rax]\n"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
     printf("    push rax\n"); // raxの値をスタックにpush
 }
 
-static void store(void) {
+static void store(Type *ty) {
     printf("#----- Store a value to the memory address.\n");
     printf("    pop rdi\n"); // スタックトップの値(右辺値)をrdiにロードする
     printf("    pop rax\n"); // スタックトップの値(アドレス)をraxにロードする
-    printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
+    
+    if( ty->size == 1 )
+        printf("    mov [rax], dil\n");
+    else
+        printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
     printf("    push rdi\n"); // rdiの値をスタックにpush
 }
 
@@ -73,7 +82,7 @@ static void gen(Node *node) {
         gen_addr(node);
 
         if(node->ty->kind != TY_ARRAY)
-            load(); // メモリアドレスからデータをレジスタにload
+            load(node->ty); // メモリアドレスからデータをレジスタにload
         return;
     case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
         // 左辺のkindがTY_ARRAYではない場合のみ、左辺値として処理できる(arrayの形のままではどのアドレスに値を割り当てるかわからない)
@@ -81,7 +90,7 @@ static void gen(Node *node) {
         gen(node->rhs); // =>最終的に計算結果を入れたraxの値(右辺値)がスタックにpushされる ...push rax
 
         // メモリアドレスへのデータのstore
-        store();
+        store(node->ty);
         return;
     case ND_IF: {
         int seq = labelseq++;
@@ -184,7 +193,7 @@ static void gen(Node *node) {
         // 引数の数分、値をpopしてレジスタにセットする
         printf("#-- 引数をレジスタにセット \n");
         for(int i = nargs-1; i >= 0; i--)
-            printf("    pop %s\n", argreg[i]);
+            printf("    pop %s\n", argreg8[i]);
 
         // 関数を呼ぶ前にRSPを調整して、RSPを16byte境界(16の倍数)になるようにアラインメントする
         // - push/popは8byte単位で変更するので、
@@ -252,7 +261,7 @@ static void gen(Node *node) {
     case ND_DEREF:
         gen(node->lhs);
         if(node->ty->kind != TY_ARRAY)
-            load();
+            load(node->ty);
         return;
     }
 
@@ -344,6 +353,16 @@ static void emit_data(Program *prog) {
     }
 }
 
+static void load_arg(Var *var, int idx) {
+    int sz = var->ty->size;
+    if(sz == 1) {
+        printf("    mov [rbp-%d], %s\n", var->offset, argreg1[idx]);
+    } else {
+        assert(sz == 8);
+        printf("    mov [rbp-%d], %s\n", var->offset, argreg8[idx]);
+    }
+}
+
 static void emit_text(Program *prog) {
     printf(".text\n");
 
@@ -358,12 +377,11 @@ static void emit_text(Program *prog) {
         printf("    mov rbp, rsp\n");
         printf("    sub rsp, %d\n", fn->stack_size);
 
-        // 引数をローカル変数のようにスタックにpushする
+        // 関数の引数をローカル変数のようにスタックにpushする
         int i = 0;
-        for(VarList *vl = fn->params; vl; vl = vl->next) {
-            Var *var = vl->var;
-            printf("    mov [rbp-%d], %s\n", var->offset, argreg[i++]);
-        }
+        for(VarList *vl = fn->params; vl; vl = vl->next)
+            load_arg(vl->var, i++);
+
 
         // Emit code
         for (Node *node = fn->node; node; node = node->next) {

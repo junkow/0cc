@@ -178,12 +178,19 @@ static void global_var(void) {
 // basetype = "int" "*"*
 // "int"と"*"が0以上の組み合わせ
 static Type *basetype(void) {
-    expect("int"); // tokenがintでなければエラー
+    Type *ty;
 
-    Type *ty = int_type; // kindにTY_INTを設定したTypeインスタンスのアドレス
+    if (consume("char")) {
+        ty = char_type;
+    } else {
+        expect("int");
+        ty = int_type;
+    }
+
     while(consume("*"))
         // もしderefの記号`*`があったら、kindにTY_PTRを設定したTypeになる
         ty = pointer_to(ty);
+
     return ty;
 }
 
@@ -286,6 +293,11 @@ static Node *declaration(void) {
     return new_unary(ND_EXPR_STMT, node, tok); // 式文の単項になる
 }
 
+// 次のtokenがtype名を表現していたら、trueを返す
+static bool is_typename(void) {
+    return ( peek("char") || peek("int") );
+}
+
 static Node *read_expr_stmt(void) {
     Token *tok = token; // global変数:token(各tokenの連結リスト)のアドレス
     return new_unary(ND_EXPR_STMT, expr(), tok);
@@ -372,7 +384,7 @@ static Node *stmt2(void) {
         return node;
     }
 
-    if(tok = peek("int")) {
+    if(is_typename()) {
         // declaration()内のbasetype関数でtokenの"int"をチェックしたいので、トークンを進めないpeekを使う
         return declaration();
     }

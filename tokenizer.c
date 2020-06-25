@@ -62,7 +62,7 @@ Token *consume_ident(void) {
     return t; // アドレスが進む前のtokenのアドレスを返すことで、呼び出し先で現在注目しているtokenのプロパティ(token->strなど)を参照することができる
 }
 
-// 現在のtokenが与えられたstringに一致していたらTokenインスタンスを、そうでなければNULLを返す
+// 現在のtokenが与えられたstringに一致していたら、そのままTokenインスタンスを、そうでなければNULLを返す
 // トークンは進めない
 Token *peek(char *s) {
     if(token->kind != TK_RESERVED || strlen(s) != token->len || 
@@ -133,7 +133,8 @@ static bool is_alnum(char c) {
 // If the string includes the reserved keywords returns the keyword.
 static char *is_keyword(char *p) {
     // Keywords
-    static char *kw[] = {"return", "if", "else", "while", "for", "int", "sizeof"};
+    static char *kw[] = {"return", "if", "else", "while", "for", "int",
+                         "char", "sizeof"};
 
     for(int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
         int len = strlen(kw[i]);

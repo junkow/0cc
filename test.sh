@@ -28,6 +28,8 @@ assert() {
     fi
 }
 
+# char
+assert 1 'int main() { char x=1; return x; }'
 # global variable
 assert 0 'int x; int main() { return x; }'
 assert 3 'int x; int main() { x = 3; return x; }'

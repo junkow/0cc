@@ -1,10 +1,11 @@
 #include "9cc.h"
+
 // 複合リテラル
-// kindにTY_INT, size 8を指定したType型インスタンスのアドレス
+Type *char_type = &(Type){TY_CHAR, 1};
 Type *int_type = &(Type){TY_INT, 8};
 
 bool is_integer(Type *ty) {
-    return ty->kind == TY_INT;
+    return ty->kind == TY_CHAR || ty->kind == TY_INT;
 }
 
 // pointerのTypeのインスタンスを作成してそれを返す

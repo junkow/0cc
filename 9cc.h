@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -155,9 +156,10 @@ Program *program(void);
 //
 
 typedef enum { 
-    TY_INT,   // 0
-    TY_PTR,   // 1
-    TY_ARRAY, // 2
+    TY_CHAR,
+    TY_INT,
+    TY_PTR,
+    TY_ARRAY,
 } TypeKind;
 
 struct Type {
@@ -171,6 +173,7 @@ struct Type {
 // ty->kind = TY_ARRAY
 // ty->base->kind = TY_INT
 
+extern Type *char_type;
 extern Type *int_type;
 
 bool is_integer(Type *ty);
