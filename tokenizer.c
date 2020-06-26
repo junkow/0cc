@@ -174,13 +174,13 @@ static char get_escape_char(char **new_pos, char *p) {
     *new_pos = p+1;
 
     switch(*p) {
-    case 'a': return '\a'; // ベル(警告音)
-    case 'b': return '\b'; // バックスペース
-    case 't': return '\t'; // 水平タブ
-    case 'n': return '\n'; // ラインフィード(改行)
-    case 'v': return '\v'; // 垂直タブ
-    case 'f': return '\f'; // フォームフィード
-    case 'r': return '\r'; // キャリッジリターン
+    case 'a': return '\a'; // 7 ベル(警告音)
+    case 'b': return '\b'; // 8 バックスペース
+    case 't': return '\t'; // 9 水平タブ
+    case 'n': return '\n'; // 10 ラインフィード(改行)
+    case 'v': return '\v'; // 11 垂直タブ
+    case 'f': return '\f'; // 12 フォームフィード
+    case 'r': return '\r'; // 13 キャリッジリターン
     case 'e': return 27;
     default: return *p;
     }
