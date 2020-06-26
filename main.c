@@ -2,6 +2,7 @@
 
 int align_to(int n, int align) {
     // TODO: 後で確認する
+    // ~(align-1): alignの値の符号反転
     return (n + align + 1) & ~(align-1);
 }
 
