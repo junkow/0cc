@@ -147,8 +147,33 @@ static char *is_keyword(char *p) {
 }
 
 // エスケープシーケンス'\'に対応
-static char get_escape_char(char c) {
-    switch(c) {
+static char get_escape_char(char **new_pos, char *p) {
+    // 呼び出し先のloopでpのアドレスを進めるか、この中でアドレスを進める必要がある
+    // 引数new_posを使って呼び出し先の文字列pのアドレスを進める
+    // - 呼び出し先の場合、文字だけの時はアドレスを1だけ進めれば良かったので、p++で対応できた。
+    // - 8進数を読んだときはその桁数によって進める数が変わってくるので、この関数内でその分を進める方がわかりやすい
+    if('0' <= *p && *p <= '7') {
+        // 8進数を読む
+        // まず一の位を計算
+        int c = *p++ - '0'; // 計算をしたいからcharではなくてintで処理している?
+        if('0' <= *p && *p <= '7') {
+            // 桁上がりなので、前の結果cを8倍してから、一の位を計算して足す
+            c = (c*8) + (*p++ - '0');
+            if('0' <= *p && *p <= '7') {
+                // 桁上がりなので、前の結果cを8倍してから、一の位を計算して足す
+                c = (c*8) + (*p++ - '0');
+            }
+        }
+
+        // 8進数を読んだあとの位置にpのアドレスが進んでいる
+        *new_pos = p;
+        return c;
+    }
+
+    // pのアドレスを一つだけ進めて代入
+    *new_pos = p+1;
+
+    switch(*p) {
     case 'a': return '\a'; // ベル(警告音)
     case 'b': return '\b'; // バックスペース
     case 't': return '\t'; // 水平タブ
@@ -157,8 +182,7 @@ static char get_escape_char(char c) {
     case 'f': return '\f'; // フォームフィード
     case 'r': return '\r'; // キャリッジリターン
     case 'e': return 27;
-    case '0': return 0;    // null文字
-    default: return c;
+    default: return *p;
     }
 }
 
@@ -175,9 +199,10 @@ static Token *read_string_literal(Token *cur, char *start) {
         if (*p == '"') // 末尾の'"'端ならループを抜ける
             break;
 
-        if (*p == '\\') {
-            p++;
-            buf[len++] = get_escape_char(*p++); // エスケープ文字としてバッファに追加
+        if (*p == '\\') { // '\'は92
+            // pを'\'の分1だけを進める
+            buf[len++] = get_escape_char(&p, p + 1); // エスケープ文字としてバッファに追加
+            // get_escape_char関数で副作用として、pを進めている
         } else {
             buf[len++] = *p++;  // 通常の文字ならそのままバッファに追加
         }
@@ -186,7 +211,7 @@ static Token *read_string_literal(Token *cur, char *start) {
     // ここでpは末尾の'"'を指している
 
     Token *tok = new_token(TK_STR, cur, start, p - start + 1); // ""も含めた文字列の長さ。"abc"ならlen = 5
-    tok->contents = malloc(len+1);   // 末尾に'\0'を加えたいのでlen+1の長さを確保
+    tok->contents = malloc(len+1);   // 末尾に'\0'を加えたいのでlen+1の長さを、メモリに確保
     memcpy(tok->contents, buf, len); // メモリの確保したtok->contentsに、bufにためた文字列を、その文字列の長さ分コピー
     tok->contents[len] = '\0';       // 文字の末尾に'\0'を追加
     tok->cont_len = len+1;           // 文字数 + '\0'(終端文字)
