@@ -188,19 +188,23 @@ static char get_escape_char(char **new_pos, char *p) {
 
 static Token *read_string_literal(Token *cur, char *start) {
     char *p = start + 1; // 先頭の'"'分を進める
-    char buf[1024];  // 文字をためるバッファ
+    char *end = p;
+
+    // 文字列の終端の'"'を見つける
+    for(; *end != '"'; end++) { 
+        if(*end == '\0')
+            error_at(start, "unclosed string literal");
+        if(*end == '\\') // もし'\'ならアドレスを進める
+            end++;
+    }
+
+    // 文字列全体を含めるのに十分なバッファをallocateする
+    char *buf = calloc(1, end - p + 1); // 文字の長さ分 + 1(後で追加する'\0'の分)
     int len = 0;     // 文字数をカウント
 
-    for(;;) {
-        if (len == sizeof(buf)) 
-            error_at(start, "string literal too large");
-        if (*p == '\0') // 終端文字'\0'はまだついていないはずなので、これがきたらstring literalが閉じていないことになる?
-            error_at(start, "unclosed string literal");
-        if (*p == '"') // 末尾の'"'端ならループを抜ける
-            break;
-
+    while(*p != '"') {
         if (*p == '\\') { // '\'は92
-            // pを'\'の分1だけを進める
+            // pを'\'の分、1だけを進める
             buf[len++] = get_escape_char(&p, p + 1); // エスケープ文字としてバッファに追加
             // get_escape_char関数で副作用として、pを進めている
         } else {
@@ -209,14 +213,13 @@ static Token *read_string_literal(Token *cur, char *start) {
     }
 
     // ここでpは末尾の'"'を指している
+    // lenは文字の個数を指している
+
+    buf[len] = '\0'; // bufの最後に終端文字'\0'をセット
 
     Token *tok = new_token(TK_STR, cur, start, p - start + 1); // ""も含めた文字列の長さ。"abc"ならlen = 5
-    tok->contents = malloc(len+1);   // 末尾に'\0'を加えたいのでlen+1の長さを、メモリに確保
-    memcpy(tok->contents, buf, len); // メモリの確保したtok->contentsに、bufにためた文字列を、その文字列の長さ分コピー
-    tok->contents[len] = '\0';       // 文字の末尾に'\0'を追加
-    tok->cont_len = len+1;           // 文字数 + '\0'(終端文字)
-    // printf("debug: tok->contents %s\n", tok->contents);
-    // printf("debug: tok->contents %d\n", tok->contents[len] == '\0');
+    tok->contents = buf;
+    tok->cont_len = len+1;  // 文字数 + '\0'(終端文字)
     return tok;
 }
 
