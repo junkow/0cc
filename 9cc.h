@@ -15,10 +15,11 @@ typedef struct Type Type;
 
 // トークンの種類
 typedef enum {
-    TK_RESERVED, // 記号
-    TK_IDENT,    // 識別子
-    TK_NUM,      // 整数トークン
-    TK_EOF,      // 入力の終わりを表すトークン
+    TK_RESERVED, // Keywords or punctuators 記号
+    TK_IDENT,    // Itendefiers 識別子
+    TK_STR,      // string literals 文字列リテラル
+    TK_NUM,      // Integer literals 整数リテラル
+    TK_EOF,      // End-of-file markers 入力の終わりを表すマーカー
 } TokenKind;
 
 // トークン型
@@ -29,6 +30,9 @@ struct Token {
     int val;        // kindがTK_NUMの場合、その数値
     char *str;      // トークン文字列
     int len;        // トークン文字列の長さ
+
+    char *contents; // 文字列リテラルのコンテンツ、(終了文字)terminatingの'\0'を含む
+    int cont_len;   // 文字列リテラルの長さ
 };
 
 void error(char *fmt, ...);
@@ -63,6 +67,10 @@ struct Var {
 
     // for local variable
     int offset;     // RBPからのオフセット
+
+    // Global variable
+    char *contents;
+    int cont_len;
 };
 
 // 変数のリストを表す構造体

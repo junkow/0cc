@@ -1,7 +1,7 @@
 #include "9cc.h"
 
 // x86_64のABIで規定されている引数をセットするレジスタのリスト(引数の順番と同じ)
-static char *argreg1[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+static char *argreg1[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"}; // 8bitレジスタ
 static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 static int labelseq = 1;
@@ -44,8 +44,9 @@ static void load(Type *ty) {
     printf("#----- Load a value from the memory address.\n");
     printf("    pop rax\n"); // スタックトップからローカル変数のアドレスをpopしてraxに保存する
     
-    if( ty->size == 1)
-        printf("    movsx rax, byte ptr [rax]\n");
+    if( ty->size == 1 )
+        // movsx命令 符号拡張が不要
+        printf("    movsx rax, byte ptr [rax]\n"); // raxの指しているアドレスから1バイトの読みこみ、raxにセット
     else
         printf("    mov rax, [rax]\n"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
     printf("    push rax\n"); // raxの値をスタックにpush
@@ -57,7 +58,7 @@ static void store(Type *ty) {
     printf("    pop rax\n"); // スタックトップの値(アドレス)をraxにロードする
     
     if( ty->size == 1 )
-        printf("    mov [rax], dil\n");
+        printf("    mov [rax], dil\n"); // 1バイトの書き出し
     else
         printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
     printf("    push rdi\n"); // rdiの値をスタックにpush
@@ -343,13 +344,25 @@ static void gen(Node *node) {
     printf("    push rax\n");
 }
 
+// リテラルの文字列はスタック上に存在している値ではなく、メモリ上の固定の位置に存在している
+// なので、文字列リテラルを表すためにはグローバル変数を使用する
 static void emit_data(Program *prog) {
     printf(".data\n");
 
     for(VarList *vl = prog->globals; vl; vl = vl->next) {
         Var *var = vl->var;
         printf("%s:\n", var->name);
-        printf("    .zero %d\n", var->ty->size);
+
+        // global変数の場合
+        if (!var->contents) {
+            printf("    .zero %d\n", var->ty->size);
+            continue;
+        }
+
+        // 文字列リテラルの場合
+        for( int i = 0; i < var->cont_len; i++ ) {
+            printf("    .byte %d\n", var->contents[i]);
+        }
     }
 }
 

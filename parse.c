@@ -32,41 +32,6 @@ static Var *find_var(Token *tok) {
     return NULL;
 }
 
-// 変数を作成
-static Var *new_var(char *name, Type *ty, bool is_local) {
-    Var *var = calloc(1, sizeof(Var));
-    var->name = name;
-    var->ty = ty;
-    var->is_local = is_local;
-
-    return var;
-}
-
-// local変数を作成
-static Var *new_lvar(char *name, Type *ty) {
-    Var *var = new_var(name, ty, true);
-
-    // ローカル変数と関数の引数を両方含んだ変数のリストを作成
-    VarList *vl = calloc(1, sizeof(VarList));
-    vl->var = var;
-    vl->next = locals; // 関数内のローカル変数(または引数)のインスタンス(VarList構造体)を作成して今のlocalsリストにつなげる
-    locals = vl; // locals変数が常にVarListの連結リストの先頭を指すようにする
-
-    return var;
-}
-
-// global変数を作成
-static Var *new_gvar(char *name, Type *ty) {
-    Var *var = new_var(name, ty, false);
-
-    VarList *vl = calloc(1, sizeof(VarList));
-    vl->var = var;
-    vl->next = globals;
-    globals = vl;
-
-    return var;
-}
-
 // 新しいノードを作成する関数
 // 以下の2種類に合わせて関数を二つ用意する
 // - 左辺と右辺を受け取る2項演算子
@@ -102,6 +67,51 @@ static Node *new_node_num(long value, Token *tok) {
     node->val = value;
     return node;
 }
+
+// 変数を作成
+static Var *new_var(char *name, Type *ty, bool is_local) {
+    Var *var = calloc(1, sizeof(Var));
+    var->name = name;
+    var->ty = ty;
+    var->is_local = is_local;
+
+    return var;
+}
+
+// local変数を作成
+static Var *new_lvar(char *name, Type *ty) {
+    Var *var = new_var(name, ty, true);
+
+    // ローカル変数と関数の引数を両方含んだ変数のリストを作成
+    VarList *vl = calloc(1, sizeof(VarList));
+    vl->var = var;
+    vl->next = locals; // 関数内のローカル変数(または引数)のインスタンス(VarList構造体)を作成して今のlocalsリストにつなげる
+    locals = vl; // locals変数が常にVarListの連結リストの先頭を指すようにする
+
+    return var;
+}
+
+// global変数を作成
+static Var *new_gvar(char *name, Type *ty) {
+    Var *var = new_var(name, ty, false);
+
+    VarList *vl = calloc(1, sizeof(VarList));
+    vl->var = var;
+    vl->next = globals;
+    globals = vl;
+
+    return var;
+}
+
+// 今まで見た文字列リテラルがすべて入っているベクタ
+static char *new_label(void) {
+    static int cnt = 0;
+    char buf[20];
+    sprintf(buf, ".L.data.%d", cnt++);
+
+    return strndup(buf, 20);
+}
+
 
 // 左結合の演算子をパーズする関数
 // 返されるノードの左側の枝のほうが深くなる
@@ -561,7 +571,7 @@ static Node *func_args(void) {
     return head;
 }
 
-// primary = ("(" expr ")")* | "sizeof" unary | ident func-args | num 
+// primary = ("(" expr ")")* | "sizeof" unary | ident func-args? | str | num
 static Node *primary(void) {
     Token *tok;
 
@@ -599,8 +609,22 @@ static Node *primary(void) {
         return new_node_var(var, tok);
     }
 
-    // それ以外なら数値のはず
     tok = token;
+
+    // トークンの種類が文字列リテラルの場合
+    if(tok->kind == TK_STR) {
+        token = token->next;
+
+        Type *ty = array_of(char_type, tok->cont_len); // base type はchar型, 長さは文字列の長さ分
+        Var *var = new_gvar(new_label(), ty); // nameは型はarray
+
+        var->contents = tok->contents;
+        var->cont_len = tok->cont_len;
+
+        return new_node_var(var, tok);
+    }
+
+    // それ以外なら数値のはず
     if(tok->kind != TK_NUM)
         error_tok(tok, "expected expression");
 

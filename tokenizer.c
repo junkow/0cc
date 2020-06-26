@@ -160,12 +160,38 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
             continue;
         }
 
+        // 文字列リテラル
+        if (*p == '"') {
+            char *q = p++; // qに'"'をセットし、pをひとつ進める
+            while(*p && *p != '"') // 文字列リテラルをとじる'"'を見つけたらloopを抜ける
+                p++;
+
+            if(!*p) // pが'"'でなければ文字の終端ではないので、閉じられていないのでエラー
+                error_at(q, "unclosed string literal");
+            p++; // pを進めるpの位置は'"'の次の位置
+
+            cur = new_token(TK_STR, cur, q, p - q); // ""のなかの文字列だけ取り出してtokenにする
+            cur->contents = strndup(q+1, p-q-2); // "foo"ならfから3文字なので、fooがcontents
+
+            cur->cont_len = p-q-1; // '""'の中の文字列の長さ "foo\0"なら3 (\0)を含まない
+            continue;
+        }
+
         // Keywords
         char *kw = is_keyword(p);
         if(kw) {
             int len = strlen(kw);
             cur = new_token(TK_RESERVED, cur, p, len);
             p += len;
+            continue;
+        }
+
+        // Multi-letter punctuators
+        // 複数文字の方を先に書く
+        if(startswith(p, "==") || startswith(p, "!=") ||
+           startswith(p, "<=") || startswith(p, ">=")) {
+            cur = new_token(TK_RESERVED, cur, p, 2); // pの値を入力後pを2つ進める
+            p += 2;
             continue;
         }
 
@@ -176,15 +202,6 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
                 p++;
             }
             cur = new_token(TK_IDENT, cur, q, p-q);
-            continue;
-        }
-
-        // Multi-letter punctuators
-        // 複数文字の方を先に書く
-        if(startswith(p, "==") || startswith(p, "!=") ||
-           startswith(p, "<=") || startswith(p, ">=")) {
-            cur = new_token(TK_RESERVED, cur, p, 2); // pの値を入力後pを2つ進める
-            p += 2;
             continue;
         }
 
