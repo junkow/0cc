@@ -6,4 +6,5 @@ a.out
 9cc
 *.s
 */
+!/example
 Dockerfile
