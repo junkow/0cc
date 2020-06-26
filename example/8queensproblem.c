@@ -29,7 +29,6 @@ int queens(int i) {
             }
         }
     }
-    return 0;
 }
 
 int queenssol8() {
