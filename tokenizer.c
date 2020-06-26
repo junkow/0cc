@@ -146,14 +146,30 @@ static char *is_keyword(char *p) {
     return NULL;
 }
 
+static bool is_hex(char c) {
+    return ('0' <= c && c <= '9') ||
+           ('a' <= c && c <= 'f') ||
+           ('A' <= c && c <= 'F');
+}
+
+static int from_hex(char c) {
+    if('0' <= c && c <= '9')
+        return c - '0';
+    if('a' <= c && c <= 'f')
+        return c - 'a' + 10;
+    return c - 'A' + 10;
+}
+
 // エスケープシーケンス'\'に対応
 static char get_escape_char(char **new_pos, char *p) {
     // 呼び出し先のloopでpのアドレスを進めるか、この中でアドレスを進める必要がある
     // 引数new_posを使って呼び出し先の文字列pのアドレスを進める
     // - 呼び出し先の場合、文字だけの時はアドレスを1だけ進めれば良かったので、p++で対応できた。
     // - 8進数を読んだときはその桁数によって進める数が変わってくるので、この関数内でその分を進める方がわかりやすい
+
+    // 8進数を読む
+    // "\<octal-sequence>"
     if('0' <= *p && *p <= '7') {
-        // 8進数を読む
         // まず一の位を計算
         int c = *p++ - '0'; // 計算をしたいからcharではなくてintで処理している?
         if('0' <= *p && *p <= '7') {
@@ -170,7 +186,26 @@ static char get_escape_char(char **new_pos, char *p) {
         return c;
     }
 
-    // pのアドレスを一つだけ進めて代入
+    // 16進数を読む
+    // "\x<hexadecimal-sequence>"
+    if(*p == 'x') {
+        p++;
+
+        if(!is_hex(*p))
+            error_at(p, "invalid hex escape sequence");
+
+        int c = 0;
+        for(; is_hex(*p); p++) {
+            c = (c * 16) + from_hex(*p);
+            if(c > 255)
+                error_at(p, "hex escape sequence out of range");
+        }
+
+        *new_pos = p;
+        return c;
+    }
+
+    // pのアドレスを1つ(これから読む文字1文字分)だけ進める
     *new_pos = p+1;
 
     switch(*p) {
