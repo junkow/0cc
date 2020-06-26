@@ -146,6 +146,55 @@ static char *is_keyword(char *p) {
     return NULL;
 }
 
+// エスケープシーケンス'\'に対応
+static char get_escape_char(char c) {
+    switch(c) {
+    case 'a': return '\a'; // ベル(警告音)
+    case 'b': return '\b'; // バックスペース
+    case 't': return '\t'; // 水平タブ
+    case 'n': return '\n'; // ラインフィード(改行)
+    case 'v': return '\v'; // 垂直タブ
+    case 'f': return '\f'; // フォームフィード
+    case 'r': return '\r'; // キャリッジリターン
+    case 'e': return 27;
+    case '0': return 0;    // null文字
+    default: return c;
+    }
+}
+
+static Token *read_string_literal(Token *cur, char *start) {
+    char *p = start + 1; // 先頭の'"'分を進める
+    char buf[1024];  // 文字をためるバッファ
+    int len = 0;     // 文字数をカウント
+
+    for(;;) {
+        if (len == sizeof(buf)) 
+            error_at(start, "string literal too large");
+        if (*p == '\0') // 終端文字'\0'はまだついていないはずなので、これがきたらstring literalが閉じていないことになる?
+            error_at(start, "unclosed string literal");
+        if (*p == '"') // 末尾の'"'端ならループを抜ける
+            break;
+
+        if (*p == '\\') {
+            p++;
+            buf[len++] = get_escape_char(*p++); // エスケープ文字としてバッファに追加
+        } else {
+            buf[len++] = *p++;  // 通常の文字ならそのままバッファに追加
+        }
+    }
+
+    // ここでpは末尾の'"'を指している
+
+    Token *tok = new_token(TK_STR, cur, start, p - start + 1); // ""も含めた文字列の長さ。"abc"ならlen = 5
+    tok->contents = malloc(len+1);   // 末尾に'\0'を加えたいのでlen+1の長さを確保
+    memcpy(tok->contents, buf, len); // メモリの確保したtok->contentsに、bufにためた文字列を、その文字列の長さ分コピー
+    tok->contents[len] = '\0';       // 文字の末尾に'\0'を追加
+    tok->cont_len = len+1;           // 文字数 + '\0'(終端文字)
+    // printf("debug: tok->contents %s\n", tok->contents);
+    // printf("debug: tok->contents %d\n", tok->contents[len] == '\0');
+    return tok;
+}
+
 // 入力文字列pをトークナイズしてそれを返す
 Token *tokenize(void) { // グローバル変数を使うので引数はvoidに変更
     char *p = user_input;
@@ -162,27 +211,8 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
 
         // 文字列リテラル
         if (*p == '"') {
-            char *q = p++; // qに'"'をセットし、pをひとつ進める
-            while(*p && *p != '"') // 文字列リテラルをとじる'"'を見つけたらloopを抜ける
-                p++;
-
-            if(!*p) // pが'"'でなければ文字の終端ではないので、閉じられていないのでエラー
-                error_at(q, "unclosed string literal");
-            p++; // pを進めるpの位置は'"'の次の位置
-
-            // e.g.
-            // $ ./9cc 'int main() { char *a = "abc"; return abc[0]; }'
-            // p: ; return a[0]; } // at this point, p indicates these strings
-            // q: "abc"; return abc[0]; } // at this point, q indicates these strings
-            // p - q = 5
-            // p-q-2 = 3 : ""分を引いている?
-
-            cur = new_token(TK_STR, cur, q, p - q); // str = "abc"...; }, len = 5
-            // 最初の'"'の次(文字列の先頭)から、文字列全体-("")の長さ => 結果、""の中身
-            cur->contents = strndup(q+1, p-q-2); // cur->contents: abc
-
-            cur->cont_len = p-q-1; // // cur->contents: abc\0 だから4?
-
+            cur = read_string_literal(cur, p);
+            p += cur->len;
             continue;
         }
 
