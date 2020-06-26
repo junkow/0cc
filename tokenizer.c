@@ -170,10 +170,19 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
                 error_at(q, "unclosed string literal");
             p++; // pを進めるpの位置は'"'の次の位置
 
-            cur = new_token(TK_STR, cur, q, p - q); // ""のなかの文字列だけ取り出してtokenにする
-            cur->contents = strndup(q+1, p-q-2); // "foo"ならfから3文字なので、fooがcontents
+            // e.g.
+            // $ ./9cc 'int main() { char *a = "abc"; return abc[0]; }'
+            // p: ; return a[0]; } // at this point, p indicates these strings
+            // q: "abc"; return abc[0]; } // at this point, q indicates these strings
+            // p - q = 5
+            // p-q-2 = 3 : ""分を引いている?
 
-            cur->cont_len = p-q-1; // '""'の中の文字列の長さ "foo\0"なら3 (\0)を含まない
+            cur = new_token(TK_STR, cur, q, p - q); // str = "abc"...; }, len = 5
+            // 最初の'"'の次(文字列の先頭)から、文字列全体-("")の長さ => 結果、""の中身
+            cur->contents = strndup(q+1, p-q-2); // cur->contents: abc
+
+            cur->cont_len = p-q-1; // // cur->contents: abc\0 だから4?
+
             continue;
         }
 

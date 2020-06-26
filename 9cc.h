@@ -31,7 +31,7 @@ struct Token {
     char *str;      // トークン文字列
     int len;        // トークン文字列の長さ
 
-    char *contents; // 文字列リテラルのコンテンツ、(終了文字)terminatingの'\0'を含む
+    char *contents; // 文字列リテラルのコンテンツ
     int cont_len;   // 文字列リテラルの長さ
 };
 
