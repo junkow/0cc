@@ -104,6 +104,7 @@ typedef enum {
     ND_BLOCK,     // { ... } compound-statement
     ND_FUNCALL,   // Function call
     ND_EXPR_STMT, // Expression statement
+    ND_STMT_EXPR, // Statement expression
     ND_VAR,       // local variable
     ND_NUM,       // integer
     ND_NULL,      // Empty statement
@@ -127,7 +128,7 @@ struct Node {
     Node *init;    // initialization(初期化式)
     Node *inc;     // increment
 
-    // Block
+    // Block or statement expression
     // 複数のstatementをまとめてひとつのstatementにする
     // stmt()で展開した複数のnodeを連結リストで表して、その先頭のアドレス
     Node *body;

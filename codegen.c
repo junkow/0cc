@@ -165,13 +165,16 @@ static void gen(Node *node) {
         printf(".L.end.%d:\n", seq);
         return;
     }
-    case ND_BLOCK: {
-        Node *n = node->body; // statementのリストの先頭
-        printf("#----- Block {...}\n");
-        for(; n; n = n->next)
-            gen(n);
-
+    case ND_BLOCK:
+    case ND_STMT_EXPR: {
+        if(node->body) {
+            Node *n = node->body; // statementのリストの先頭
+            printf("#----- Block {...} / Statement expression\n");
+            for(; n; n = n->next)
+                gen(n);
+        }
         // ひとつひとつのstatementは一つの値をスタックに残すので、毎回ポップするのをわすれないこと
+        // TODO: bodyが空の時にエラーを表示する
         return;
     }
     case ND_FUNCALL: { // 関数呼び出し

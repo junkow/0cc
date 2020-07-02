@@ -552,6 +552,40 @@ static Node *postfix(void) {
     return node;
 }
 
+// stmt-expr = "(" "{" stmt stmt* "}" ")"
+// Stament expression is GNU C extension
+static Node *stmt_expr(Token *tok) {
+    Node *node = new_node(ND_STMT_EXPR, tok);
+    node->body = stmt();
+    Node *cur = node->body;
+
+    while(!consume("}")) {
+        cur->next = stmt();
+        cur = cur->next;
+    }
+
+    expect(")");
+
+    // TODO: あとで調べる
+    // 式なので、値を一つ必ず残す
+    // 文は"return" expr ";", "{" stmt* "}"など
+    // "(""{" "}"")" の中が stmt stmt* の形になっている必要がある
+    // e.g. これらは以下のエラーになった
+    // 'int main() { (1;); }'                     => 式の結果はあるので、いまのところエラーにならない?
+    // 'int main() { (); }'                       => expected expression 式がない
+    // 'int main() { ({}); }'                     => expected expression 式がない
+    // 'int main() { return (); }'                => expected expression 式がない
+    // 'int main() { return ({}); }'              => expected expression 式がない
+    // 'int main() { ({return 1;}); }'            => stmt-expr returning void is not supported
+    // 'int main() { ({int x = 5; return x;}); }' => stmt-expr returning void is not supported
+    // 'int main() { return ({return 1;}); }'     => stmt-expr returning void is not supported
+    if(cur->kind != ND_EXPR_STMT)
+        error_tok(cur->tok, "stmt-expr returning void is not supported");
+
+    memcpy(cur, cur->lhs, sizeof(Node));
+    return node;
+}
+
 /* 
     "関数呼び出し"は {...} のなかでの関数呼び出しの文の解析
     `foo() { bar(x, y); }`の`bar(x, y)の部分`
@@ -571,11 +605,23 @@ static Node *func_args(void) {
     return head;
 }
 
-// primary = ("(" expr ")")* | "sizeof" unary | ident func-args? | str | num
+// primary = "(" "{" stmt-expr-tail "}" ")"
+//           | ("(" expr ")")*
+//           | "sizeof" unary
+//           | ident func-args?
+//           | str
+//           | num
 static Node *primary(void) {
     Token *tok;
 
-    if(consume("(")) { // 次のトークンが"("なら、"(" expr ")"のはず
+    if (consume("(")) {
+        if(consume("{")) {
+            // 次のトークンが"("かつ"{"なら stmt_expr "}" ")"となるはず
+            Node *node = stmt_expr(tok);
+            return node;
+        }
+
+        // 次のトークンが"("なら、"(" expr ")"のはず
         Node *node = expr();
         expect(")");
         return node;
