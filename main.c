@@ -15,6 +15,9 @@ static char *read_file(char *path) {
         error("%s: file too large");
 
     // Make sure that the string ends with "\n\0"
+    // コンパイラの実装の都合上、全ての行が改行文字で終わっている方が、改行文字かEOFで
+    // 終わっているデータよりも扱いやすいので、ファイルの最後のバイトが\nではない場合、
+    // 自動的に\nを追加する
     if(size == 0 || buf[size-1] != '\n')
         buf[size++] = '\n';
     buf[size] = '\0';
