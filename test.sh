@@ -14,7 +14,7 @@ assert() {
     expected="$1"
     input="$2"
 
-    ./9cc "$input" > tmp.s
+    ./9cc <(echo "$input") > tmp.s || exit
     # cc -o tmp tmp.s
     # gcc -xc -c -o tmp3.o ./example/8queensproblem.c
     gcc -static -o tmp tmp.s tmp2.o

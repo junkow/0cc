@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -48,6 +49,7 @@ bool at_eof(void);
 
 Token *tokenize(void);
 
+extern char *filename;
 // 現在着目しているトークン
 extern Token *token;
 // 入力された文字列全体を受け取る変数
