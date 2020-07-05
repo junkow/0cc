@@ -19,34 +19,45 @@ static char *read_file(char *path) {
             error("cannnot open %s: %s", path, strerror(errno));
     }
 
-    int buflen = 4096; // 4 * 1024
-    int nread = 0;
-    char *buf = calloc(1, buflen);
+    // int buflen = 4096; // 4 * 1024
+    // int nread = 0;
+    // char *buf = calloc(1, buflen);
 
-    // Read the entire file
-    for(;;) {
-        int end = buflen - 2; // 末尾の"\n\0"のために、追加で2bytes用意する
-        int n = fread(buf + nread, 1, end - nread, fp);
-        if(n == 0)
-            break;
-        nread += n;
-        if(nread == end) {
-            buflen *= 2;
-            buf = realloc(buf, buflen);
-        }
-    }
+    // // Read the entire file
+    // for(;;) {
+    //     int end = buflen - 2; // 末尾の"\n\0"のために、追加で2bytes用意する
+    //     int n = fread(buf + nread, 1, end - nread, fp);
+    //     if(n == 0)
+    //         break;
+    //     nread += n;
+    //     if(nread == end) {
+    //         buflen *= 2;
+    //         buf = realloc(buf, buflen);
+    //     }
+    // }
 
-    if(fp != stdin)
-        fclose(fp);
+    // if(fp != stdin)
+    //     fclose(fp);
+
+    int filemax = 10 * 1024 * 1024;
+    char *buf = malloc(filemax);
+    int size = fread(buf, 1, filemax - 2, fp);
+    if(!feof(fp))
+        error("%s: file too large");
+
+    if(size == 0 || buf[size-1] != '\n')
+        buf[size++] = '\n';
+    buf[size] = '\0';
 
     // Canonicalize the last line by appending "\n\0"
     // if it does not end with a newline.
     // コンパイラの実装の都合上、全ての行が改行文字で終わっている方が、改行文字かEOFで
     // 終わっているデータよりも扱いやすいので、ファイルの最後のバイトが\nではない場合、
     // 自動的に\nを追加して正規化する
-    if(nread == 0 || buf[nread-1] != '\n')
-        buf[nread++] = '\n';
-    buf[nread] = '\0';
+    // if(nread == 0 || buf[nread-1] != '\n')
+    //     buf[nread++] = '\n';
+    // buf[nread] = '\0';
+
     return buf;
 }
 
@@ -104,7 +115,7 @@ static void parse_args(int argc, char **argv) {
         }
 
         if(argv[i][0] == '-' && argv[i][1] != '\0')
-            error("unnknown argument: %s", argv[i]);
+            error("unknown argument: %s", argv[i]);
 
         input_path = argv[i];
     }
@@ -114,24 +125,27 @@ static void parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-    // if(argc != 2) {
-    //     fprintf(stderr, "引数の個数が正しくありません\n");
-    //     return 1;
-    // }
-    parse_args(argc, argv);
+    if(argc != 2) {
+        fprintf(stderr, "引数の個数が正しくありません\n");
+        return 1;
+    }
+    // parse_args(argc, argv);
 
     // Open the output file
-    if(strcmp(output_file, "-") == 0) {
-        output_file = stdout;
-    } else {
-        output_file = fopen(output_path, "w");
-        if(!output_file)
-            error("cannot open output file: %s: %s", output_file, strerror(errno));
-    }
+    // printf("debug: strcmp result %d\n", strcmp(output_path, "-"));
+    // if(strcmp(output_path, "-") == 0) {
+    //     printf("debug: outputfile == stdout\n");
+    //     output_file = stdout;
+    // } else {
+    //     printf("debug: outputfile != stdout\n");
+    //     output_file = fopen(output_path, "w");
+    //     if(!output_file)
+    //         error("cannot open output file: %s: %s", output_path, strerror(errno));
+    // }
 
     // トークナイズする
-    filename = input_path;
-    user_input = read_file(input_path);
+    filename = argv[1];
+    user_input = read_file(argv[1]);
     token = tokenize();
     // トークナイズしたものをパースする(抽象構文木の形にする)
     Program *prog = program(); // functionの連結リストが作成され、その先頭アドレス
