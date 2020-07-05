@@ -18,9 +18,6 @@ void error(char *fmt, ...) {
 // foo.c:10: x = y + 1;
 //               ^ <error message here>
 static void verror_at(char *loc, char *fmt, va_list ap) {
-    // int pos = loc - user_input;
-    // fprintf(stderr, "%s\n", user_input);
-
     // `loc`を含んでいる行を見つける
     char *line = loc;
     while(user_input < line && line[-1] != '\n')
@@ -31,18 +28,19 @@ static void verror_at(char *loc, char *fmt, va_list ap) {
         end++;
 
     // 行数を取得する
-    int line_num = 1;
+    int line_no = 1;
     for(char *p = user_input; p < line; p++) {
         if(*p == '\n')
-            line_num++;
+            line_no++;
     }
 
     // その行を表示する
-    int indent = fprintf(stderr, "%s:%d: ", filename, line_num);
+    int indent = fprintf(stderr, "%s:%d: ", filename, line_no);
     fprintf(stderr, "%.*s\n", (int)(end - line), line);
 
     // エラーメッセージを表示
     int pos = loc - line + indent;
+
     fprintf(stderr, "%*s", pos, ""); // pos個の空白を入力
     fprintf(stderr, "^ ");
     vfprintf(stderr, fmt, ap);

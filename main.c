@@ -4,25 +4,46 @@
 
 // 与えられたファイルのコンテンツを返す
 static char *read_file(char *path) {
+    FILE *fp;
+
     // Open and read the file.
-    FILE *fp = fopen(path, "r");
-    if(!fp)
-        error("cannnot open %s: %s", path, strerror(errno));
+    if (strcmp(path, "-") == 0) {
+        // 慣例として、与えられたfilenameが"-"の場合はstdinから読み込む
+        fp = stdin;
+    } else {
+        fp = fopen(path, "r");
+        if(!fp)
+            error("cannnot open %s: %s", path, strerror(errno));
+    }
 
-    int filemax = 10 * 1024 * 1024; // 10MiB
-    char *buf = malloc(filemax);
-    int size = fread(buf, 1, filemax - 2, fp);
+    int buflen = 4096; // 4 * 1024
+    int nread = 0;
+    char *buf = calloc(1, buflen);
 
-    if(!feof(fp))
-        error("%s: file too large");
+    // Read the entire file
+    for(;;) {
+        int end = buflen - 2; // 末尾の"\n\0"のために、追加で2bytes用意する
+        int n = fread(buf + nread, 1, end - nread, fp);
+        if(n == 0)
+            break;
+        nread += n;
+        if(nread == end) {
+            buflen *= 2;
+            buf = realloc(buf, buflen);
+        }
+    }
 
-    // Make sure that the string ends with "\n\0"
+    if(fp != stdin)
+        fclose(fp);
+
+    // Canonicalize the last line by appending "\n\0"
+    // if it does not end with a newline.
     // コンパイラの実装の都合上、全ての行が改行文字で終わっている方が、改行文字かEOFで
     // 終わっているデータよりも扱いやすいので、ファイルの最後のバイトが\nではない場合、
-    // 自動的に\nを追加する
-    if(size == 0 || buf[size-1] != '\n')
-        buf[size++] = '\n';
-    buf[size] = '\0';
+    // 自動的に\nを追加して正規化する
+    if(nread == 0 || buf[nread-1] != '\n')
+        buf[nread++] = '\n';
+    buf[nread] = '\0';
     return buf;
 }
 
