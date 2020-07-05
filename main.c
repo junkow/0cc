@@ -1,6 +1,9 @@
 #include "9cc.h"
 
-// FILE *output_file;
+FILE *output_file;
+
+static char *input_path;
+static char *output_path;
 
 // 与えられたファイルのコンテンツを返す
 static char *read_file(char *path) {
@@ -78,15 +81,57 @@ int align_to(int n, int align) {
     return (n + align + 1) / align * align;
 }
 
+static void usage(int status) {
+    fprintf(stderr, "9cc [ -o <path>] <file>\n");
+    exit(status);
+}
+
+static void parse_args(int argc, char **argv) {
+    for(int i = 1; i < argc; i++) {
+        if(!strcmp(argv[i], "--help"))
+            usage(0);
+
+        if(!strcmp(argv[i], "-o")) {
+            if(!argv[++i])
+                usage(1);
+            output_path = argv[i];
+            continue;
+        }
+
+        if(!strncmp(argv[i], "-o", 2)) {
+            output_path = argv[i] + 2;
+            continue;
+        }
+
+        if(argv[i][0] == '-' && argv[i][1] != '\0')
+            error("unnknown argument: %s", argv[i]);
+
+        input_path = argv[i];
+    }
+
+    if(!input_path)
+        error("no input files");
+}
+
 int main(int argc, char **argv) {
-    if(argc != 2) {
-        fprintf(stderr, "引数の個数が正しくありません\n");
-        return 1;
+    // if(argc != 2) {
+    //     fprintf(stderr, "引数の個数が正しくありません\n");
+    //     return 1;
+    // }
+    parse_args(argc, argv);
+
+    // Open the output file
+    if(strcmp(output_file, "-") == 0) {
+        output_file = stdout;
+    } else {
+        output_file = fopen(output_path, "w");
+        if(!output_file)
+            error("cannot open output file: %s: %s", output_file, strerror(errno));
     }
 
     // トークナイズする
-    filename = argv[1];
-    user_input = read_file(argv[1]);
+    filename = input_path;
+    user_input = read_file(input_path);
     token = tokenize();
     // トークナイズしたものをパースする(抽象構文木の形にする)
     Program *prog = program(); // functionの連結リストが作成され、その先頭アドレス

@@ -54,7 +54,6 @@ extern char *filename;
 extern Token *token;
 // 入力された文字列全体を受け取る変数
 extern char *user_input;
-// extern FILE *output_file;
 
 //
 // parse.c
@@ -198,3 +197,9 @@ void add_type(Node *node);
 //
 
 void codegen(Program *prog);
+
+//
+// main.c
+//
+
+extern FILE *output_file;
