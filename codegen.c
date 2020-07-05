@@ -7,6 +7,13 @@ static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static int labelseq = 1;
 static char *funcname;
 
+// static void println(char *fmt, ...) {
+//     va_list ap;
+//     va_start(ap, fmt);
+//     vfrpintf(output_file, fmt, ap);
+//     fprintf(output_file, "\n");
+// }
+
 static void gen(Node *node);
 
 // ローカル変数のアドレスの取得

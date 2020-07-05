@@ -1,5 +1,7 @@
 #include "9cc.h"
 
+// FILE *output_file;
+
 // 与えられたファイルのコンテンツを返す
 static char *read_file(char *path) {
     // Open and read the file.
