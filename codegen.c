@@ -11,7 +11,7 @@ static void println(char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     vfprintf(output_file, fmt, ap);
-    // fprintf(output_file, "\n");
+    fprintf(output_file, "\n");
 }
 
 static void gen(Node *node);
@@ -424,7 +424,7 @@ static void emit_text(Program *prog) {
 void codegen(Program *prog) {
     // アセンブリの前半部分
     // printf(".intel_syntax noprefix\n");
-    println(".intel_syntax noprefix\n");
+    println(".intel_syntax noprefix");
     emit_data(prog);
     emit_text(prog);
 }
