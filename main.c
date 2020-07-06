@@ -102,17 +102,19 @@ static void parse_args(int argc, char **argv) {
         if(!strcmp(argv[i], "--help"))
             usage(0);
 
-        // if(!strcmp(argv[i], "-o")) {
-        //     if(!argv[++i])
-        //         usage(1);
-        //     output_path = argv[i];
-        //     continue;
-        // }
+        if(!strcmp(argv[i], "-o")) {
+            if(!argv[++i])
+                usage(1);
+            output_path = argv[i];
+            printf("debug: strcmp output_path: %s\n", output_path);
+            continue;
+        }
 
-        // if(!strncmp(argv[i], "-o", 2)) {
-        //     output_path = argv[i] + 2;
-        //     continue;
-        // }
+        if(!strncmp(argv[i], "-o", 2)) {
+            output_path = argv[i] + 2;
+            printf("debug: strncmp output_path: %s\n", output_path);
+            continue;
+        }
 
         if(argv[i][0] == '-' && argv[i][1] != '\0')
             error("unknown argument: %s", argv[i]);
