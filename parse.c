@@ -1,23 +1,44 @@
 #include "9cc.h"
 
+typedef struct VarScope VarScope;
+struct VarScope {
+    VarScope *next;
+    char *name;
+    int depth;
+    Var *var;
+};
+
 // 変数をまとめるリスト
 // ローカル変数と引数をまとめるリスト
 // パーズ中に作成されたすべてのlocal variableインスタンスをまとめる
 static VarList *locals;
-// global変数をまとめるリスト
 static VarList *globals;
-static VarList *scope;
+
+static VarScope *var_scope;
+
+// blockの始まりに、1だけincrementされる
+// block scopeの終わりに、1だけdecrementされる
+static int scope_depth;
+
+static void enter_scope(void) {
+    scope_depth++;
+}
+
+static void leave_scope(void) {
+    scope_depth--;
+    while(var_scope && var_scope->depth > scope_depth)
+        var_scope = var_scope->next;
+}
 
 // File a variable by name
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
 // scopeの内側から外側へ変数を辿る
 static Var *find_var(Token *tok) {
     // 内側のscopeから変数を辿り、なければ、その外側のscopeというように変数を辿る
-    for(VarList *vl = scope; vl; vl = vl->next) {
-        Var *var = vl->var;
-        if(strlen(var->name) == tok->len && !strncmp(tok->str, var->name, tok->len)) {
+    for(VarScope *sc = var_scope; sc; sc = sc->next) {
+        if(strlen(sc->name) == tok->len && !strncmp(tok->str, sc->name, tok->len)) {
             // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
-            return var;
+            return sc->var;
         }
     }
 
@@ -60,6 +81,19 @@ static Node *new_node_num(long value, Token *tok) {
     return node;
 }
 
+static VarScope *push_scope(char *name, Var *var) {
+    VarScope *sc = calloc(1, sizeof(VarScope));
+    sc->name = name;
+    sc->var = var;
+    sc->depth = scope_depth;
+    // scopeインスタンスを作成して、リストにつなげる
+    sc->next = var_scope;
+    // var_scope変数はリストの先頭を指している
+    var_scope = sc;
+
+    return sc;
+}
+
 // 変数を作成
 static Var *new_var(char *name, Type *ty, bool is_local) {
     Var *var = calloc(1, sizeof(Var));
@@ -67,13 +101,7 @@ static Var *new_var(char *name, Type *ty, bool is_local) {
     var->ty = ty;
     var->is_local = is_local;
 
-    // scopeインスタンスを作成
-    VarList *sc = calloc(1, sizeof(VarList));
-    sc->var = var;
-    // 作成したインスタンスの次に現在のscopeのvarリストの先頭のscopeを接続する
-    sc->next = scope;
-    // scope変数がscopeのvarリストの先頭を指すようにする
-    scope = sc;
+    push_scope(name, var);
 
     return var;
 }
@@ -259,9 +287,8 @@ static Function *function() {
     fn->name = expect_ident();
     expect("(");
 
-    VarList *sc = scope; // 現在のscopeのポインタを保存しておく
-    // 以下の関数の呼び出しの中で、scopeに関数の引数が、リストとして連結していく
-    // scope変数が新たに連結されたリストの先頭を、どんどん指すようになる
+    enter_scope();
+
     fn->params = read_func_params(); // 関数の引数だけを管理しているVarList
     expect("{");
 
@@ -272,7 +299,8 @@ static Function *function() {
         cur->next = stmt();
         cur = cur->next;
     }
-    scope = sc; // scope変数が元のポインタを指すように戻す
+
+    leave_scope();
 
     fn->node = head.next;
     fn->locals = locals; // ローカル変数と引数を合わせて管理している
@@ -390,14 +418,14 @@ static Node *stmt2(void) {
         Node head = {};
         Node *cur = &head;
 
-        VarList *sc = scope; // 現在のscopeのポインタを保存
-        // {...}の中に変数がある可能性があるので、scopeにvarが指定されることもある
-        // scopeがどんどんリストの先頭を指すようになる
+        enter_scope();
+
         while(!consume("}")) { // consume("}")の結果がNULLでなければ
             cur->next = stmt();
             cur = cur->next;
         }
-        scope = sc; // scopeのポインタを元に戻す
+
+        leave_scope();
 
         Node *node = new_node(ND_BLOCK, tok);
         node->body = head.next;
@@ -565,7 +593,9 @@ static Node *postfix(void) {
 // stmt-expr = "(" "{" stmt stmt* "}" ")"
 // Stament expression is GNU C extension
 static Node *stmt_expr(Token *tok) {
-    VarList *sc = scope; // 現在のscopeのポインタを保存しておく
+
+    enter_scope();
+
     // ({})のなかに変数がある可能性がある
     // scopeがどんどんリストの先頭を指すようになる
     Node *node = new_node(ND_STMT_EXPR, tok);
@@ -579,7 +609,7 @@ static Node *stmt_expr(Token *tok) {
 
     expect(")");
 
-    scope = sc; // scopeのポインタを元に戻す
+    leave_scope();
 
     // TODO: あとで調べる
     // 式なので、値を一つ必ず残す
