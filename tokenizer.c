@@ -298,6 +298,25 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
             continue;
         }
 
+        // Skip line comments
+        // 一行コメントを読み飛ばす
+        if (startswith(p, "//")) {
+            p += 2;
+            while(*p != '\n')
+                p++;
+            continue;
+        }
+
+        // Skip block comments
+        // ブロックコメントを読み飛ばす
+        if (startswith(p, "/*")) {
+            char *q = strstr(p+2, "*/");
+            if(!q)
+                error_at(p, "unclosed block comment");
+            p = q+2;
+            continue;
+        }
+
         // 文字列リテラル
         if (*p == '"') {
             cur = read_string_literal(cur, p);
