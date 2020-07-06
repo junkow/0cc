@@ -3,7 +3,7 @@
 FILE *output_file;
 
 static char *input_path;
-static char *output_path;
+static char *output_path = "-";
 
 // 与えられたファイルのコンテンツを返す
 static char *read_file(char *path) {
@@ -38,16 +38,6 @@ static char *read_file(char *path) {
 
     if(fp != stdin)
         fclose(fp);
-
-    // int filemax = 10 * 1024 * 1024;
-    // char *buf = malloc(filemax);
-    // int size = fread(buf, 1, filemax - 2, fp);
-    // if(!feof(fp))
-    //     error("%s: file too large");
-
-    // if(size == 0 || buf[size-1] != '\n')
-    //     buf[size++] = '\n';
-    // buf[size] = '\0';
 
     // Canonicalize the last line by appending "\n\0"
     // if it does not end with a newline.
@@ -106,7 +96,6 @@ static void parse_args(int argc, char **argv) {
             if(!argv[++i])
                 usage(1);
             output_path = argv[i];
-            printf("debug: strcmp output_path: %s\n", output_path);
             continue;
         }
 
@@ -120,7 +109,6 @@ static void parse_args(int argc, char **argv) {
             error("unknown argument: %s", argv[i]);
 
         input_path = argv[i];
-        // printf("debug: i : %d, input_path: %s\n", i, argv[i]);
     }
 
     if(!input_path)
@@ -135,13 +123,13 @@ int main(int argc, char **argv) {
     parse_args(argc, argv);
 
     // Open the output file
-    // if(strcmp(output_path, "-") == 0) {
-    //     output_file = stdout;
-    // } else {
-    //     output_file = fopen(output_path, "w");
-    //     if(!output_file)
-    //         error("cannot open output file: %s: %s", output_path, strerror(errno));
-    // }
+    if(strcmp(output_path, "-") == 0) {
+        output_file = stdout;
+    } else {
+        output_file = fopen(output_path, "w");
+        if(!output_file)
+            error("cannot open output file: %s: %s", output_path, strerror(errno));
+    }
 
     // トークナイズする
     filename = input_path;

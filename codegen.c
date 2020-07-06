@@ -7,12 +7,12 @@ static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static int labelseq = 1;
 static char *funcname;
 
-// static void println(char *fmt, ...) {
-//     va_list ap;
-//     va_start(ap, fmt);
-//     vfrpintf(output_file, fmt, ap);
-//     fprintf(output_file, "\n");
-// }
+static void println(char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(output_file, fmt, ap);
+    // fprintf(output_file, "\n");
+}
 
 static void gen(Node *node);
 
@@ -423,7 +423,8 @@ static void emit_text(Program *prog) {
 
 void codegen(Program *prog) {
     // アセンブリの前半部分
-    printf(".intel_syntax noprefix\n");
+    // printf(".intel_syntax noprefix\n");
+    println(".intel_syntax noprefix\n");
     emit_data(prog);
     emit_text(prog);
 }
