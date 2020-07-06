@@ -31,6 +31,10 @@ assert() {
     fi
 }
 
+# Handle block scope
+assert 2 'int main() { int x = 2; { int x = 3; } return x; }'
+assert 2 'int main() { int x = 2; { int x = 3; } {int y = 4; return x;} }'
+assert 3 'int main() { int x = 2; { x = 3; } return x; }'
 # line comments and block comments
 assert 2 'int main() { /* return 1; */ return 2; }'
 assert 2 'int main() { // return 1;
@@ -168,7 +172,7 @@ assert 5 'int main() { return ret5(); }'
 # block {...}
 assert 3 'int main() { 1; {2;} return 3; }'
 assert 55 'int main() { int i=0; int j=0; while(i <= 10) { j=i+j; i=i+1;} return j; }'
-assert 58 'int main() { int i=0; int j=0; for(; i <= 10; i=i+1) { int a = 1; int b = 2; j=j+i; } return j+a+b; }'
+assert 58 'int main() { int i=0; int j=0; int a; int b; for(; i <= 10; i=i+1) { a = 1; b = 2; j=j+i; } return j+a+b; }'
 # for文
 assert 55 'int main() { int i=0; int j=0; for(; i <= 10; i=i+1) j=j+i; return j; }'
 assert 3 'int main() { for(;;) return 3; return 5; }'

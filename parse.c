@@ -6,22 +6,14 @@
 static VarList *locals;
 // global変数をまとめるリスト
 static VarList *globals;
+static VarList *scope;
 
-// 変数を見つける
+// File a variable by name
 // 連結リストから変数を名前で検索。見つからなかった場合はNULLを返す
-// local変数=>global変数の順で検索することで、local変数が同名のglobal変数を隠すという動きを実装できる
+// scopeの内側から外側へ変数を辿る
 static Var *find_var(Token *tok) {
-    // local変数から名前でlookup
-    for(VarList *vl = locals; vl; vl = vl->next) {
-        Var *var = vl->var;
-        if(strlen(var->name) == tok->len && !strncmp(tok->str, var->name, tok->len)) {
-            // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
-            return var;
-        }
-    }
-
-    // local変数のリストになければglobal変数のリストから名前でlookup
-    for(VarList *vl = globals; vl; vl = vl->next) {
+    // 内側のscopeから変数を辿り、なければ、その外側のscopeというように変数を辿る
+    for(VarList *vl = scope; vl; vl = vl->next) {
         Var *var = vl->var;
         if(strlen(var->name) == tok->len && !strncmp(tok->str, var->name, tok->len)) {
             // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
@@ -75,11 +67,21 @@ static Var *new_var(char *name, Type *ty, bool is_local) {
     var->ty = ty;
     var->is_local = is_local;
 
+    // scopeインスタンスを作成
+    VarList *sc = calloc(1, sizeof(VarList));
+    sc->var = var;
+    // 作成したインスタンスの次に現在のscopeのvarリストの先頭のscopeを接続する
+    sc->next = scope;
+    // scope変数がscopeのvarリストの先頭を指すようにする
+    scope = sc;
+
     return var;
 }
 
 // local変数を作成
 static Var *new_lvar(char *name, Type *ty) {
+    // 変数インスタンスを作成
+    // scopeにvarメンバに作成した変数インスタンスを指定して、リストを連結
     Var *var = new_var(name, ty, true);
 
     // ローカル変数と関数の引数を両方含んだ変数のリストを作成
@@ -181,7 +183,7 @@ static void global_var(void) {
     char *name = expect_ident();
     ty = read_type_suffix(ty);
     expect(";");
-    new_gvar(name, ty);
+    new_gvar(name, ty); // varはscopeに関連づけられ、リストに連結されていく
 }
 
 // baseType(Type構造体のbase propertyにあたる)を返す
@@ -255,8 +257,11 @@ static Function *function() {
     Function *fn = calloc(1, sizeof(Function));
     basetype(); // basetypeを作成(関数の返り値の型) tokenがintでない場合のエラーチェック?
     fn->name = expect_ident();
-
     expect("(");
+
+    VarList *sc = scope; // 現在のscopeのポインタを保存しておく
+    // 以下の関数の呼び出しの中で、scopeに関数の引数が、リストとして連結していく
+    // scope変数が新たに連結されたリストの先頭を、どんどん指すようになる
     fn->params = read_func_params(); // 関数の引数だけを管理しているVarList
     expect("{");
 
@@ -267,6 +272,7 @@ static Function *function() {
         cur->next = stmt();
         cur = cur->next;
     }
+    scope = sc; // scope変数が元のポインタを指すように戻す
 
     fn->node = head.next;
     fn->locals = locals; // ローカル変数と引数を合わせて管理している
@@ -384,10 +390,14 @@ static Node *stmt2(void) {
         Node head = {};
         Node *cur = &head;
 
+        VarList *sc = scope; // 現在のscopeのポインタを保存
+        // {...}の中に変数がある可能性があるので、scopeにvarが指定されることもある
+        // scopeがどんどんリストの先頭を指すようになる
         while(!consume("}")) { // consume("}")の結果がNULLでなければ
             cur->next = stmt();
             cur = cur->next;
         }
+        scope = sc; // scopeのポインタを元に戻す
 
         Node *node = new_node(ND_BLOCK, tok);
         node->body = head.next;
@@ -555,6 +565,9 @@ static Node *postfix(void) {
 // stmt-expr = "(" "{" stmt stmt* "}" ")"
 // Stament expression is GNU C extension
 static Node *stmt_expr(Token *tok) {
+    VarList *sc = scope; // 現在のscopeのポインタを保存しておく
+    // ({})のなかに変数がある可能性がある
+    // scopeがどんどんリストの先頭を指すようになる
     Node *node = new_node(ND_STMT_EXPR, tok);
     node->body = stmt();
     Node *cur = node->body;
@@ -565,6 +578,8 @@ static Node *stmt_expr(Token *tok) {
     }
 
     expect(")");
+
+    scope = sc; // scopeのポインタを元に戻す
 
     // TODO: あとで調べる
     // 式なので、値を一つ必ず残す
@@ -663,6 +678,7 @@ static Node *primary(void) {
 
         Type *ty = array_of(char_type, tok->cont_len); // base type はchar型, 長さは文字列の長さ分
         Var *var = new_gvar(new_label(), ty); // nameは型はarray
+        // new_gvar()のなかで、varはscopeに関連づけられ、リストに連結されていく
 
         var->contents = tok->contents;
         var->cont_len = tok->cont_len;
