@@ -22,14 +22,14 @@ static void gen_addr(Node *node) {
     case ND_VAR: {
         Var *var = node->var;
         if (var->is_local) {
-            printf("#----- Local variable\n");
-            printf("#----- Pushes the given node's memory address to the stack.\n");
+            println("#----- Local variable");
+            println("#----- Pushes the given node's memory address to the stack.");
             // srcオペランドのメモリアドレスを計算し、distオペランドにロードする
-            printf("    lea rax, [rbp-%d]\n", var->offset); // lea : load effective address
-            printf("    push rax\n"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
+            println("    lea rax, [rbp-%d]", var->offset); // lea : load effective address
+            println("    push rax"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
         } else {
-            printf("#----- Global variable\n");
-            printf("    push offset %s\n", var->name);
+            println("#----- Global variable");
+            println("    push offset %s", var->name);
         }
         return;
     }
@@ -48,27 +48,27 @@ static void gen_lval(Node *node) {
 }
 
 static void load(Type *ty) {
-    printf("#----- Load a value from the memory address.\n");
-    printf("    pop rax\n"); // スタックトップからローカル変数のアドレスをpopしてraxに保存する
+    println("#----- Load a value from the memory address.");
+    println("    pop rax"); // スタックトップからローカル変数のアドレスをpopしてraxに保存する
     
     if( ty->size == 1 )
         // movsx命令 符号拡張が不要
-        printf("    movsx rax, byte ptr [rax]\n"); // raxの指しているアドレスから1バイトの読みこみ、raxにセット
+        println("    movsx rax, byte ptr [rax]"); // raxの指しているアドレスから1バイトの読みこみ、raxにセット
     else
-        printf("    mov rax, [rax]\n"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
-    printf("    push rax\n"); // raxの値をスタックにpush
+        println("    mov rax, [rax]"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
+    println("    push rax"); // raxの値をスタックにpush
 }
 
 static void store(Type *ty) {
-    printf("#----- Store a value to the memory address.\n");
-    printf("    pop rdi\n"); // スタックトップの値(右辺値)をrdiにロードする
-    printf("    pop rax\n"); // スタックトップの値(アドレス)をraxにロードする
+    println("#----- Store a value to the memory address.");
+    println("    pop rdi"); // スタックトップの値(右辺値)をrdiにロードする
+    println("    pop rax"); // スタックトップの値(アドレス)をraxにロードする
     
     if( ty->size == 1 )
-        printf("    mov [rax], dil\n"); // 1バイトの書き出し
+        println("    mov [rax], dil"); // 1バイトの書き出し
     else
-        printf("    mov [rax], rdi\n"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
-    printf("    push rdi\n"); // rdiの値をスタックにpush
+        println("    mov [rax], rdi"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
+    println("    push rdi"); // rdiの値をスタックにpush
 }
 
 // 抽象構文木からアセンブリコードを生成する
@@ -83,8 +83,8 @@ static void gen(Node *node) {
         // expression (式):  値を一つ必ず残す
         // statement (文):  値を必ず何も残さない
         gen(node->lhs);
-        printf("#----- Expression statement\n");
-        printf("    add rsp, 8\n");
+        println("#----- Expression statement");
+        println("    add rsp, 8");
         return;
     case ND_VAR: // 変数の値の参照
         gen_addr(node);
@@ -103,24 +103,24 @@ static void gen(Node *node) {
     case ND_IF: {
         int seq = labelseq++;
 
-        printf("#----- \"If\" statement\n");
+        println("#----- \"If\" statement");
         if(node->els) {
             gen(node->cond); // expr Aをコンパイルしたコード スタックトップに値が積まれているはず
-            printf("    pop rax\n");
-            printf("    cmp rax, 0\n");
-            printf("    je  .L.else.%d\n", seq);
+            println("    pop rax");
+            println("    cmp rax, 0");
+            println("    je  .L.else.%d", seq);
             gen(node->then); // stmt
-            printf("    jmp .L.end.%d\n", seq);
-            printf(".L.else.%d:\n", seq);
+            println("    jmp .L.end.%d", seq);
+            println(".L.else.%d:", seq);
             gen(node->els);  // stmt
-            printf(".L.end.%d:\n", seq);
+            println(".L.end.%d:", seq);
         } else {
             gen(node->cond); // expr Aをコンパイルしたコード スタックトップに値が積まれているはず
-            printf("    pop rax\n");
-            printf("    cmp rax, 0\n");
-            printf("    je  .L.end.%d\n", seq);
+            println("    pop rax");
+            println("    cmp rax, 0");
+            println("    je  .L.end.%d", seq);
             gen(node->then); // stmt
-            printf(".L.end.%d:\n", seq);
+            println(".L.end.%d:", seq);
         }
         return;
     }
@@ -131,15 +131,15 @@ static void gen(Node *node) {
             A: expression
             B: statement
         */
-        printf("#----- \"While\" statement\n");
-        printf(".L.begin.%d:\n", seq);
+        println("#----- \"While\" statement");
+        println(".L.begin.%d:", seq);
         gen(node->cond);    // Aをコンパイルしたコード
-        printf("    pop rax\n");
-        printf("    cmp rax, 0\n");
-        printf("    je  .L.end.%d\n", seq);
+        println("    pop rax");
+        println("    cmp rax, 0");
+        println("    je  .L.end.%d", seq);
         gen(node->then);    // Bをコンパイルしたコード
-        printf("    jmp .L.begin.%d\n", seq);
-        printf(".L.end.%d:\n", seq);
+        println("    jmp .L.begin.%d", seq);
+        println(".L.end.%d:", seq);
         return;
     }
     case ND_FOR: {
@@ -155,28 +155,28 @@ static void gen(Node *node) {
             C: increment   expression statement
             D:             statement
         */
-        printf("#----- \"For\" statement\n");
+        println("#----- \"For\" statement");
         if(node->init)
             gen(node->init); // the code which compiled A
-        printf(".L.begin.%d:\n", seq);
+        println(".L.begin.%d:", seq);
         if(node->cond) {
             gen(node->cond); // the code which compiled B
-            printf("    pop rax\n");
-            printf("    cmp rax, 0\n");
-            printf("    je  .L.end.%d\n", seq);
+            println("    pop rax");
+            println("    cmp rax, 0");
+            println("    je  .L.end.%d", seq);
         }
         gen(node->then); // the code which compiled D
         if(node->inc)
             gen(node->inc);  // the code which compiled C
-        printf("    jmp .L.begin.%d\n", seq);
-        printf(".L.end.%d:\n", seq);
+        println("    jmp .L.begin.%d", seq);
+        println(".L.end.%d:", seq);
         return;
     }
     case ND_BLOCK:
     case ND_STMT_EXPR: {
         if(node->body) {
             Node *n = node->body; // statementのリストの先頭
-            printf("#----- Block {...} / Statement expression\n");
+            println("#----- Block {...} / Statement expression");
             for(; n; n = n->next)
                 gen(n);
         }
@@ -185,7 +185,7 @@ static void gen(Node *node) {
         return;
     }
     case ND_FUNCALL: { // 関数呼び出し
-        printf("#----- Function call with up to 6 parameters. \n");
+        println("#----- Function call with up to 6 parameters. ");
         int nargs = 0;
         for (Node *arg = node->args; arg; arg = arg->next) {
             gen(arg);
@@ -202,9 +202,9 @@ static void gen(Node *node) {
         */
 
         // 引数の数分、値をpopしてレジスタにセットする
-        printf("#-- 引数をレジスタにセット \n");
+        println("#-- 引数をレジスタにセット ");
         for(int i = nargs-1; i >= 0; i--)
-            printf("    pop %s\n", argreg8[i]);
+            println("    pop %s", argreg8[i]);
 
         // 関数を呼ぶ前にRSPを調整して、RSPを16byte境界(16の倍数)になるようにアラインメントする
         // - push/popは8byte単位で変更するので、
@@ -234,28 +234,28 @@ static void gen(Node *node) {
             ...
         */
         int seq = labelseq++;
-        printf("    mov rax, rsp\n");   // rspの値をraxにコピーする
-        printf("#-- スタックフレームが16の倍数になっているかどうかチェック\n");
-        printf("    and rax, 15\n");    // and: 論理積
-        printf("#-- もし16の倍数でないならアライン操作するラベルにジャンプ\n");
-        printf("    jnz .L.call.%d\n", seq);  // 結果が0でない(16の倍数でない)=>RSPのアラインメント操作が必要=>.L.call.XXXラベルへジャンプ
-        printf("    mov rax, 0\n");     // raxに0をコピー
-        printf("    call %s\n", node->funcname);  // 関数呼び出し
-        printf("#-- 関数の実行終了のラベルにジャンプ\n");
-        printf("    jmp .L.end.%d\n", seq);  // 関数呼び出しの結果がraxにセットされている=>.L.end.XXXラベルにジャンプ
+        println("    mov rax, rsp");   // rspの値をraxにコピーする
+        println("#-- スタックフレームが16の倍数になっているかどうかチェック");
+        println("    and rax, 15");    // and: 論理積
+        println("#-- もし16の倍数でないならアライン操作するラベルにジャンプ");
+        println("    jnz .L.call.%d", seq);  // 結果が0でない(16の倍数でない)=>RSPのアラインメント操作が必要=>.L.call.XXXラベルへジャンプ
+        println("    mov rax, 0");     // raxに0をコピー
+        println("    call %s", node->funcname);  // 関数呼び出し
+        println("#-- 関数の実行終了のラベルにジャンプ");
+        println("    jmp .L.end.%d", seq);  // 関数呼び出しの結果がraxにセットされている=>.L.end.XXXラベルにジャンプ
         
-        printf("#----- スタックフレームを16の倍数にアラインする\n");
-        printf(".L.call.%d:\n", seq);   // RSPのアラインメント操作をする
-        printf("#-- スタックフレームを8増やす\n");
-        printf("    sub rsp, 8\n");     // スタックをひとつ増やす(push/popで8byteごとに操作しているので、8byte増やすことでRSPを16の倍数に調整)
-        printf("    mov rax, 0\n");     // raxの値を0にセットする
-        printf("    call %s\n", node->funcname);  // 関数呼び出し (RSPがアラインメントできたのでRSPが呼び出せる)
-        printf("#-- アラインのために8増やしたスタックを減らして元に戻す\n");
-        printf("    add rsp, 8\n");     // スタックをひとつ減らす(RSP調整のために足したスタックを引いておく)
+        println("#----- スタックフレームを16の倍数にアラインする");
+        println(".L.call.%d:", seq);   // RSPのアラインメント操作をする
+        println("#-- スタックフレームを8増やす");
+        println("    sub rsp, 8");     // スタックをひとつ増やす(push/popで8byteごとに操作しているので、8byte増やすことでRSPを16の倍数に調整)
+        println("    mov rax, 0");     // raxの値を0にセットする
+        println("    call %s", node->funcname);  // 関数呼び出し (RSPがアラインメントできたのでRSPが呼び出せる)
+        println("#-- アラインのために8増やしたスタックを減らして元に戻す");
+        println("    add rsp, 8");     // スタックをひとつ減らす(RSP調整のために足したスタックを引いておく)
         
-        printf("#----- 関数の実行終了\n");
-        printf(".L.end.%d:\n", seq);    // 終了処理
-        printf("    push rax\n");       // raxの値(関数呼び出しの結果)をスタックにプッシュ
+        println("#----- 関数の実行終了");
+        println(".L.end.%d:", seq);    // 終了処理
+        println("    push rax");       // raxの値(関数呼び出しの結果)をスタックにプッシュ
         return;
     }
     case ND_RETURN:
@@ -279,23 +279,23 @@ static void gen(Node *node) {
     gen(node->lhs);
     gen(node->rhs);
 
-    printf("    pop rdi\n");
-    printf("    pop rax\n");
+    println("    pop rdi");
+    println("    pop rax");
 
     switch(node->kind) {
     case ND_ADD:
-        printf("    add rax, rdi\n");
+        println("    add rax, rdi");
         break;
     case ND_PTR_ADD:
-        printf("    imul rdi, %d\n", node->ty->base->size);  // この数値(rdi)はアドレスなので、8倍する
-        printf("    add rax, rdi\n"); // num + num の形
+        println("    imul rdi, %d", node->ty->base->size);  // この数値(rdi)はアドレスなので、8倍する
+        println("    add rax, rdi"); // num + num の形
         break;
     case ND_SUB:
-        printf("    sub rax, rdi\n");
+        println("    sub rax, rdi");
         break;
     case ND_PTR_SUB:
-        printf("    imul rdi, %d\n", node->ty->base->size);  // この数値(rdi)はアドレスなので、8倍する
-        printf("    sub rax, rdi\n"); // num - num の形
+        println("    imul rdi, %d", node->ty->base->size);  // この数値(rdi)はアドレスなので、8倍する
+        println("    sub rax, rdi"); // num - num の形
         break;
     case ND_PTR_DIFF:
         /*
@@ -311,47 +311,47 @@ static void gen(Node *node) {
                 RDX = RDE:RAX SignedModulus SRC
         */
         // 被除数(この場合はraxの値)をセット
-        printf("    sub rax, rdi\n"); // rax = rax - rdi
-        printf("    cqo\n");          // rax => (RDX:RAX)
-        printf("    mov rdi, %d\n", node->lhs->ty->base->size);   // 8をrdiにコピーする
-        printf("    idiv rdi\n");     // divide rax by rdi(=8)(引き算の結果は欲しい結果の8倍の値なので)
+        println("    sub rax, rdi"); // rax = rax - rdi
+        println("    cqo");          // rax => (RDX:RAX)
+        println("    mov rdi, %d", node->lhs->ty->base->size);   // 8をrdiにコピーする
+        println("    idiv rdi");     // divide rax by rdi(=8)(引き算の結果は欲しい結果の8倍の値なので)
         // 欲しい結果はraxにセットされている
         break;
     case ND_MUL:
-        printf("    imul rax, rdi\n");
+        println("    imul rax, rdi");
         break;
     case ND_DIV:
         // raxに入っている64ビットの値を128ビットに伸ばしてRDXとRAXにセットする
-        printf("    cqo\n");
+        println("    cqo");
         // idiv: 符号あり除算命令
-        printf("    idiv rax, rdi\n");
+        println("    idiv rax, rdi");
         break;
     case ND_EQ:
         // popしてきた値をcompareする
-        printf("    cmp rax, rdi\n");
+        println("    cmp rax, rdi");
         // alはraxの下位8ビット
-        printf("    sete al\n");
+        println("    sete al");
         // movzb: rax全体を0か1にするために上位56ビットをゼロクリアする
-        printf("    movzb rax, al\n");
+        println("    movzb rax, al");
         break;
     case ND_NE:
-        printf("    cmp rax, rdi\n");
-        printf("    setne al\n");
-        printf("    movzb rax, al\n");
+        println("    cmp rax, rdi");
+        println("    setne al");
+        println("    movzb rax, al");
         break;
     case ND_LT:
-        printf("    cmp rax, rdi\n");
-        printf("    setl al\n");
-        printf("    movzb rax, al\n");
+        println("    cmp rax, rdi");
+        println("    setl al");
+        println("    movzb rax, al");
         break;
     case ND_LE:
-        printf("    cmp rax, rdi\n");
-        printf("    setle al\n");
-        printf("    movzb rax, al\n");
+        println("    cmp rax, rdi");
+        println("    setle al");
+        println("    movzb rax, al");
         break;
     }
 
-    printf("    push rax\n");
+    println("    push rax");
 }
 
 // リテラルの文字列はスタック上に存在している値ではなく、メモリ上の固定の位置に存在している
@@ -361,17 +361,17 @@ static void emit_data(Program *prog) {
 
     for(VarList *vl = prog->globals; vl; vl = vl->next) {
         Var *var = vl->var;
-        printf("%s:\n", var->name);
+        println("%s:", var->name);
 
         // global変数の場合
         if (!var->contents) {
-            printf("    .zero %d\n", var->ty->size);
+            println("    .zero %d", var->ty->size);
             continue;
         }
 
         // 文字列リテラルの場合
         for( int i = 0; i < var->cont_len; i++ ) {
-            printf("    .byte %d\n", var->contents[i]);
+            println("    .byte %d", var->contents[i]);
         }
     }
 }
@@ -379,10 +379,10 @@ static void emit_data(Program *prog) {
 static void load_arg(Var *var, int idx) {
     int sz = var->ty->size;
     if(sz == 1) {
-        printf("    mov [rbp-%d], %s\n", var->offset, argreg1[idx]);
+        println("    mov [rbp-%d], %s", var->offset, argreg1[idx]);
     } else {
         assert(sz == 8);
-        printf("    mov [rbp-%d], %s\n", var->offset, argreg8[idx]);
+        println("    mov [rbp-%d], %s", var->offset, argreg8[idx]);
     }
 }
 
