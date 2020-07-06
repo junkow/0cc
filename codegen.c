@@ -77,7 +77,7 @@ static void gen(Node *node) {
     case ND_NULL: // Empty statement
         return;
     case ND_NUM:
-        printf("    push %ld\n", node->val);
+        println("    push %ld", node->val);
         return;
     case ND_EXPR_STMT:
         // expression (式):  値を一つ必ず残す
@@ -262,9 +262,9 @@ static void gen(Node *node) {
         gen(node->lhs); // returnの返り値になっている式のコードが出力される
 
         // 関数呼び出し元に戻る
-        printf("#----- Returns to the caller address.\n");
-        printf("    pop rax\n"); // スタックトップから値をpopしてraxにセットする
-        printf("    jmp .L.return.%s\n", funcname); // .L.returnラベルにジャンプ
+        println("#----- Returns to the caller address.");
+        println("    pop rax"); // スタックトップから値をpopしてraxにセットする
+        println("    jmp .L.return.%s", funcname); // .L.returnラベルにジャンプ
         return;
     case ND_ADDR:
         gen_addr(node->lhs);
@@ -357,7 +357,7 @@ static void gen(Node *node) {
 // リテラルの文字列はスタック上に存在している値ではなく、メモリ上の固定の位置に存在している
 // なので、文字列リテラルを表すためにはグローバル変数を使用する
 static void emit_data(Program *prog) {
-    printf(".data\n");
+    println(".data");
 
     for(VarList *vl = prog->globals; vl; vl = vl->next) {
         Var *var = vl->var;
