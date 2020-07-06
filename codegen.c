@@ -387,18 +387,18 @@ static void load_arg(Var *var, int idx) {
 }
 
 static void emit_text(Program *prog) {
-    printf(".text\n");
+    println(".text");
 
     for(Function *fn = prog->fns; fn; fn = fn->next) {
-        printf(".global %s\n", fn->name);
-        printf("%s:\n", fn->name);
+        println(".global %s", fn->name);
+        println("%s:", fn->name);
         funcname = fn->name;
 
         // Prologue
-        printf("#----- Prologue\n");
-        printf("    push rbp\n");
-        printf("    mov rbp, rsp\n");
-        printf("    sub rsp, %d\n", fn->stack_size);
+        println("#----- Prologue");
+        println("    push rbp");
+        println("    mov rbp, rsp");
+        println("    sub rsp, %d", fn->stack_size);
 
         // 関数の引数をローカル変数のようにスタックにpushする
         int i = 0;
@@ -413,17 +413,16 @@ static void emit_text(Program *prog) {
         }
 
         // Epilogue
-        printf("#----- Epilogue\n");
-        printf(".L.return.%s:\n", funcname);     // ラベル(`.L`はファイルスコープ)
-        printf("    mov rsp, rbp\n");
-        printf("    pop rbp\n");
-        printf("    ret\n");
+        println("#----- Epilogue");
+        println(".L.return.%s:", funcname);     // ラベル(`.L`はファイルスコープ)
+        println("    mov rsp, rbp");
+        println("    pop rbp");
+        println("    ret");
     }
 }
 
 void codegen(Program *prog) {
     // アセンブリの前半部分
-    // printf(".intel_syntax noprefix\n");
     println(".intel_syntax noprefix");
     emit_data(prog);
     emit_text(prog);
