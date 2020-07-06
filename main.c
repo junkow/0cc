@@ -99,27 +99,26 @@ static void usage(int status) {
 
 static void parse_args(int argc, char **argv) {
     for(int i = 1; i < argc; i++) {
-        if(!strcmp(argv[i], "--help"))
-            usage(0);
+        // if(!strcmp(argv[i], "--help"))
+        //     usage(0);
 
-        if(!strcmp(argv[i], "-o")) {
-            if(!argv[++i])
-                usage(1);
-            output_path = argv[i];
-            continue;
-        }
+        // if(!strcmp(argv[i], "-o")) {
+        //     if(!argv[++i])
+        //         usage(1);
+        //     output_path = argv[i];
+        //     continue;
+        // }
 
-        if(!strncmp(argv[i], "-o", 2)) {
-            output_path = argv[i] + 2;
-            continue;
-        }
+        // if(!strncmp(argv[i], "-o", 2)) {
+        //     output_path = argv[i] + 2;
+        //     continue;
+        // }
 
         if(argv[i][0] == '-' && argv[i][1] != '\0')
             error("unknown argument: %s", argv[i]);
 
-        printf("output_path: %s\n", output_path);
         input_path = argv[i];
-        printf("debug: i : %d, input_path: %s\n", i, argv[i]);
+        // printf("debug: i : %d, input_path: %s\n", i, argv[i]);
     }
 
     if(!input_path)
@@ -127,11 +126,11 @@ static void parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-    if(argc != 2) {
-        fprintf(stderr, "引数の個数が正しくありません\n");
-        return 1;
-    }
-    // parse_args(argc, argv);
+    // if(argc != 2) {
+    //     fprintf(stderr, "引数の個数が正しくありません\n");
+    //     return 1;
+    // }
+    parse_args(argc, argv);
 
     // Open the output file
     // if(strcmp(output_path, "-") == 0) {
@@ -142,10 +141,9 @@ int main(int argc, char **argv) {
     //         error("cannot open output file: %s: %s", output_path, strerror(errno));
     // }
 
-    // printf("debug: argv[1]: %s\n", argv[1]);
     // トークナイズする
-    filename = argv[1];
-    user_input = read_file(argv[1]);
+    filename = input_path;
+    user_input = read_file(input_path);
     token = tokenize();
     // トークナイズしたものをパースする(抽象構文木の形にする)
     Program *prog = program(); // functionの連結リストが作成され、その先頭アドレス
