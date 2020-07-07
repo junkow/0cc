@@ -7,4 +7,5 @@ a.out
 *.s
 */
 !/example
+!/tests
 Dockerfile
