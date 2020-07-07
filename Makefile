@@ -1,4 +1,4 @@
-CFLAGS=-std=c11 -g -static
+CFLAGS=-std=c11 -g -static -fno-common
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
 # LDFLAGS=-Wl,-v
@@ -9,9 +9,14 @@ OBJS=$(SRCS:.c=.o)
 $(OBJS): 9cc.h
 
 test: 9cc
-		./test.sh
+		./9cc -o tmp.s tests/tests.c
+		#./9cc -o tmp2.s example/8queensproblem.c
+		gcc -xc -c -o tmp2.o ./example/8queensproblem.c
+		gcc -static -o tmp tmp.s tmp2.o
+		./tmp
 
 clean:
 		rm -f 9cc *.o *~ tmp*
+		rm -rf 9cc *.o *~ tmp* tests/*~ tests/*.o
 
 .PHONY: test clean

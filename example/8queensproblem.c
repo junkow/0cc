@@ -5,6 +5,7 @@ int sol = 0;
 int absval(int a) {
     if(a < 0) {
         // printf("actual: %d, expect: %d \n", ~(a-1), -a);
+        //return a*(-1);
         return ~(a-1);
     }
     return a;
@@ -13,6 +14,7 @@ int absval(int a) {
 int empty(int i) {
     int j = 0;
     while((t[i] != t[j]) && (absval(t[i] - t[j]) != (i-j)) && j<8) j++;
+
     if(i==j)
         return 1;
     else
@@ -24,6 +26,7 @@ int queens(int i) {
         if(empty(i)) {
             if(i == 7) {
                 ++sol;
+                //sol = sol + 1;
             } else {
                 queens(i+1);
             }
