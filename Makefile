@@ -16,7 +16,6 @@ test: 9cc
 		./tmp
 
 clean:
-		rm -f 9cc *.o *~ tmp*
 		rm -rf 9cc *.o *~ tmp* tests/*~ tests/*.o
 
 .PHONY: test clean
