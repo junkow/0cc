@@ -154,7 +154,10 @@ int main(int argc, char **argv) {
         }
         fn->stack_size = align_to(offset, 8);
     }
-    
+
+    // Emit a .file directice for the assembler.
+    // fprintf(output_file, ".file 1 \"%s\"\n", argv[1]);
+
     // アセンブリコード生成
     // Traverse the AST to emit assembly.
     codegen(prog);

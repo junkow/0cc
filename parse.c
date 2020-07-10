@@ -123,7 +123,7 @@ static Var *new_lvar(char *name, Type *ty) {
 
 // global変数を作成
 static Var *new_gvar(char *name, Type *ty) {
-    Var *var = new_var(name, ty, false);
+    Var *var = new_var(name, ty, false); // varはscopeに関連付けられ、リストに連結されていく
 
     VarList *vl = calloc(1, sizeof(VarList));
     vl->var = var;
