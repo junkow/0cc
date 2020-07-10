@@ -34,6 +34,8 @@ struct Token {
 
     char *contents; // 文字列リテラルのコンテンツ
     int cont_len;   // 文字列リテラルの長さ
+
+    int line_no;    // Line number
 };
 
 void error(char *fmt, ...);
@@ -47,13 +49,13 @@ long expect_number(void);
 char *expect_ident(void);
 bool at_eof(void);
 
-Token *tokenize(void);
+Token *tokenize(char *filename, char *p);
 
-extern char *filename;
+// extern char *filename;
 // 現在着目しているトークン
 extern Token *token;
 // 入力された文字列全体を受け取る変数
-extern char *user_input;
+// extern char *user_input;
 
 //
 // parse.c

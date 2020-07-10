@@ -181,7 +181,20 @@ static bool is_function(void) {
     return isfunc;
 }
 
-// program = function*
+// global変数
+// global-var = basetype ident ("[" num "]")* ";"
+// TODO: あとで実装したい
+// gvar = basetype ident ("[" num "]")* ";"
+// global-var = gvar ( "," gvar )* ";"
+static void global_var(void) {
+    Type *ty = basetype();
+    char *name = expect_ident();
+    ty = read_type_suffix(ty);
+    expect(";");
+    new_gvar(name, ty); // varはscopeに関連づけられ、リストに連結されていく
+}
+
+// program = (function | global-var)*
 Program *program(void) {
     Function head = {};
     Function *cur = &head;
@@ -189,10 +202,11 @@ Program *program(void) {
 
     while(!at_eof()) {
         if ( is_function() ) {
+            // Function
             cur->next = function();
             cur = cur->next;
         } else {
-            // global変数を作成
+            // Global variable
             global_var();
         }
     }
@@ -202,16 +216,6 @@ Program *program(void) {
     prog->fns =  head.next;
 
     return prog;
-}
-
-// global変数
-// global-var = basetype ident ("[" num "]")* ";"
-static void global_var(void) {
-    Type *ty =  basetype();
-    char *name = expect_ident();
-    ty = read_type_suffix(ty);
-    expect(";");
-    new_gvar(name, ty); // varはscopeに関連づけられ、リストに連結されていく
 }
 
 // baseType(Type構造体のbase propertyにあたる)を返す
@@ -234,6 +238,9 @@ static Type *basetype(void) {
     return ty;
 }
 
+// type-suffix = "(" func-params
+//             | "[" num "]" type-suffix
+//             | ε
 // 配列ならbaseを設定して、arrayのTypeインスタンスを返す、それ以外ならbaseをそのまま返す
 static Type *read_type_suffix(Type *base) {
     if(!consume("["))

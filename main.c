@@ -5,6 +5,10 @@ FILE *output_file;
 static char *input_path;
 static char *output_path = "-";
 
+static char *filename;
+// 入力された文字列全体を受け取る変数
+static char *user_input;
+
 // 与えられたファイルのコンテンツを返す
 static char *read_file(char *path) {
     FILE *fp;
@@ -134,7 +138,7 @@ int main(int argc, char **argv) {
     // トークナイズする
     filename = input_path;
     user_input = read_file(input_path);
-    token = tokenize();
+    token = tokenize(filename, user_input);
     // トークナイズしたものをパースする(抽象構文木の形にする)
     Program *prog = program(); // functionの連結リストが作成され、その先頭アドレス
     // それぞれのfunctionインスタンスごとにnodeやローカル変数のリストがメンバとして含まれている

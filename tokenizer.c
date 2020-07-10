@@ -1,8 +1,12 @@
 #include "9cc.h"
 
 Token *token;
-char *user_input;
-char *filename;
+
+// Input filename
+static char *current_input;
+
+// Input string
+static char *current_filename;
 
 // エラーを報告してexitする
 void error(char *fmt, ...) {
@@ -17,10 +21,10 @@ void error(char *fmt, ...) {
 // 
 // foo.c:10: x = y + 1;
 //               ^ <error message here>
-static void verror_at(char *loc, char *fmt, va_list ap) {
+static void verror_at(int line_no, char *loc, char *fmt, va_list ap) {
     // `loc`を含んでいる行を見つける
     char *line = loc;
-    while(user_input < line && line[-1] != '\n')
+    while(current_input < line && line[-1] != '\n')
         line--;
 
     char *end = loc;
@@ -28,14 +32,14 @@ static void verror_at(char *loc, char *fmt, va_list ap) {
         end++;
 
     // 行数を取得する
-    int line_no = 1;
-    for(char *p = user_input; p < line; p++) {
-        if(*p == '\n')
-            line_no++;
-    }
+    // int line_no = 1;
+    // for(char *p = current_input; p < line; p++) {
+    //     if(*p == '\n')
+    //         line_no++;
+    // }
 
     // その行を表示する
-    int indent = fprintf(stderr, "%s:%d: ", filename, line_no);
+    int indent = fprintf(stderr, "%s:%d: ", current_filename, line_no);
     fprintf(stderr, "%.*s\n", (int)(end - line), line);
 
     // エラーメッセージを表示
@@ -51,10 +55,14 @@ static void verror_at(char *loc, char *fmt, va_list ap) {
 // エラー箇所を報告し、exitする
 // 第2引数以下はprintfと同じ引数をとる
 void error_at(char *loc, char *fmt, ...) {
+    int line_no = 1;
+    for (char *p = current_input; p < loc; p++)
+        if(*p == '\n')
+            line_no++;
+
     va_list ap;
     va_start(ap, fmt);
-
-    verror_at(loc, fmt, ap);
+    verror_at(line_no, loc, fmt, ap);
 }
 
 // エラー箇所を報告し、exitする
@@ -62,7 +70,7 @@ void error_tok(Token *tok, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
 
-    verror_at(tok->str, fmt, ap);
+    verror_at(tok->line_no, tok->str, fmt, ap);
 }
 
 // parseの中で呼び出すことでtokenがnodeに変換される
@@ -284,9 +292,27 @@ static Token *read_string_literal(Token *cur, char *start) {
     return tok;
 }
 
+static void add_line_numbers(Token *tok) {
+    char *p = current_input;
+    int n = 1;
+
+    do {
+        if (p == tok->str) {
+            tok->line_no = n;
+            tok = tok->next;
+        }
+
+        if (*p == '\n') {
+            n++;
+        }
+    } while(*p++);
+}
+
 // 入力文字列pをトークナイズしてそれを返す
-Token *tokenize(void) { // グローバル変数を使うので引数はvoidに変更
-    char *p = user_input;
+Token *tokenize(char *filename, char *p) {
+    current_filename = filename;
+    current_input = p;
+
     Token head = {}; // ダミーの要素
     head.next = NULL;
     Token *cur = &head;
@@ -370,5 +396,6 @@ Token *tokenize(void) { // グローバル変数を使うので引数はvoidに�
     }
 
     new_token(TK_EOF, cur, p, 0);
+    add_line_numbers(head.next);
     return head.next; // 先頭のダミーの次のアドレスなので、目的である先頭のトークンのアドレスを返す
 }
