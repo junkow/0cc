@@ -1,5 +1,3 @@
-// -*- c -*-
-
 // line comments and block comments
 // This is a line comment.
 

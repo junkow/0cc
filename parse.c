@@ -51,7 +51,7 @@ static Var *find_var(Token *tok) {
 // - 数値
 static Node *new_node(NodeKind kind, Token *tok) {
     Node *node = calloc(1, sizeof(Node));
-	node->kind = kind;
+    node->kind = kind;
     node->tok = tok;
     return node;
 }
@@ -78,6 +78,7 @@ static Node *new_node_var(Var *var, Token *tok) {
 static Node *new_node_num(long value, Token *tok) {
     Node *node = new_node(ND_NUM, tok);
     node->val = value;
+
     return node;
 }
 
@@ -310,6 +311,7 @@ static Function *function() {
     leave_scope();
 
     fn->node = head.next;
+
     fn->locals = locals; // ローカル変数と引数を合わせて管理している
     return fn;
 }
@@ -351,6 +353,7 @@ static bool is_typename(void) {
 
 static Node *read_expr_stmt(void) {
     Token *tok = token; // global変数:token(各tokenの連結リスト)のアドレス
+
     return new_unary(ND_EXPR_STMT, expr(), tok);
 }
 
@@ -370,6 +373,7 @@ static Node *stmt(void) {
 //      | expr ";"
 static Node *stmt2(void) {
     Token *tok;
+
     // return文のnode
     if(tok = consume("return")) {
         Node *node = new_unary(ND_RETURN, expr(), tok);
@@ -446,6 +450,7 @@ static Node *stmt2(void) {
 
     // expression statement
     Node *node = read_expr_stmt();
+
     expect(";");
     return node;
 }
@@ -634,7 +639,10 @@ static Node *stmt_expr(Token *tok) {
     if(cur->kind != ND_EXPR_STMT)
         error_tok(cur->tok, "stmt-expr returning void is not supported");
 
-    memcpy(cur, cur->lhs, sizeof(Node));
+    memcpy(cur, cur->lhs, sizeof(Node)); // 最後のnodeはnode->lhsを指すようになる
+    // curが単項のnodeで、curがND_EXPR_STMT, cur->lhsがND_NUMの場合
+    // curはアドレスはcurのアドレスで、kindがND_NUMになる
+    // 最後のstmtだけ式の結果をreturnしたいから?
     return node;
 }
 
@@ -707,7 +715,7 @@ static Node *primary(void) {
         return new_node_var(var, tok);
     }
 
-    tok = token;
+    tok = token; // tokenの位置を戻す
 
     // トークンの種類が文字列リテラルの場合
     if(tok->kind == TK_STR) {

@@ -14,8 +14,7 @@ static void println(char *fmt, ...) {
     fprintf(output_file, "\n");
 }
 
-static void gen_stmt(Node *node);
-static void gen_expr(Node *node);
+static void gen(Node *node);
 
 // ローカル変数のアドレスの取得
 static void gen_addr(Node *node) {
@@ -35,11 +34,17 @@ static void gen_addr(Node *node) {
         return;
     }
     case ND_DEREF: // 左辺値に逆参照がきた場合に処理できるようにする
-        gen_expr(node->lhs); // 左辺を展開する
+        gen(node->lhs); // 左辺を展開する
         return;
     }
 
     error_tok(node->tok, "not an lvalue");
+}
+
+static void gen_lval(Node *node) {
+    if(node->ty->kind == TY_ARRAY) // arrayの形のままの場合は左辺値ではない(アドレスが取れない)のでエラー
+        error_tok(node->tok, "not an lvalue");
+    gen_addr(node);
 }
 
 static void load(Type *ty) {
@@ -67,13 +72,19 @@ static void store(Type *ty) {
 }
 
 // 抽象構文木からアセンブリコードを生成する
-// expressionを生成する
-static void gen_expr(Node *node) {
-    // println("# debug: gen_expr: node->kind %d", node->kind);
-
+static void gen(Node *node) {
     switch(node->kind) {
+    case ND_NULL: // Empty statement
+        return;
     case ND_NUM:
         println("    push %ld", node->val);
+        return;
+    case ND_EXPR_STMT:
+        // expression (式):  値を一つ必ず残す
+        // statement (文):  値を必ず何も残さない
+        gen(node->lhs);
+        println("#----- Expression statement");
+        println("    add rsp, 8");
         return;
     case ND_VAR: // 変数の値の参照
         gen_addr(node);
@@ -81,44 +92,102 @@ static void gen_expr(Node *node) {
         if(node->ty->kind != TY_ARRAY)
             load(node->ty); // メモリアドレスからデータをレジスタにload
         return;
-    case ND_DEREF:
-        gen_expr(node->lhs);
-        if(node->ty->kind != TY_ARRAY)
-            load(node->ty);
-        return;
-    case ND_ADDR:
-        gen_addr(node->lhs);
-        return;
     case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
-        // レジスタにどの順でセットするかがlhs, rhsの違い?
         // 左辺のkindがTY_ARRAYではない場合のみ、左辺値として処理できる(arrayの形のままではどのアドレスに値を割り当てるかわからない)
-        if(node->ty->kind == TY_ARRAY) // arrayの形のままの場合は左辺値ではない(アドレスが取れない)のでエラー
-            error_tok(node->tok, "not an lvalue");
-
-        gen_addr(node->lhs); // =>最終的に計算結果を入れたraxの値(アドレス)がスタックにpushされる ...push rax
-        gen_expr(node->rhs); // =>最終的に計算結果を入れたraxの値(右辺値)がスタックにpushされる ...push rax
+        gen_lval(node->lhs); // =>最終的に計算結果を入れたraxの値(アドレス)がスタックにpushされる ...push rax
+        gen(node->rhs); // =>最終的に計算結果を入れたraxの値(右辺値)がスタックにpushされる ...push rax
 
         // メモリアドレスへのデータのstore
         store(node->ty);
-        // println("# debug: storeを呼んだよ");
         return;
+    case ND_IF: {
+        int seq = labelseq++;
+
+        println("#----- \"If\" statement");
+        if(node->els) {
+            gen(node->cond); // expr Aをコンパイルしたコード スタックトップに値が積まれているはず
+            println("    pop rax");
+            println("    cmp rax, 0");
+            println("    je  .L.else.%d", seq);
+            gen(node->then); // stmt
+            println("    jmp .L.end.%d", seq);
+            println(".L.else.%d:", seq);
+            gen(node->els);  // stmt
+            println(".L.end.%d:", seq);
+        } else {
+            gen(node->cond); // expr Aをコンパイルしたコード スタックトップに値が積まれているはず
+            println("    pop rax");
+            println("    cmp rax, 0");
+            println("    je  .L.end.%d", seq);
+            gen(node->then); // stmt
+            println(".L.end.%d:", seq);
+        }
+        return;
+    }
+    case ND_WHILE: {
+        int seq = labelseq++;
+        /* 
+            while(A) B
+            A: expression
+            B: statement
+        */
+        println("#----- \"While\" statement");
+        println(".L.begin.%d:", seq);
+        gen(node->cond);    // Aをコンパイルしたコード
+        println("    pop rax");
+        println("    cmp rax, 0");
+        println("    je  .L.end.%d", seq);
+        gen(node->then);    // Bをコンパイルしたコード
+        println("    jmp .L.begin.%d", seq);
+        println(".L.end.%d:", seq);
+        return;
+    }
+    case ND_FOR: {
+        int seq = labelseq++;
+        /*
+            expression statement: 文 => 値を残してはいけない
+            - 式を評価して、結果を捨てる役割
+            - 必ず値が残ってしまう「式」という存在を、値を残さない「文」という存在に変換する
+            for(A;B;C) D
+            A: initialize  expression statement
+            B: condition   expression
+            C: increment   expression statement
+            D:             statement
+        */
+        println("#----- \"For\" statement");
+        if(node->init)
+            gen(node->init); // the code which compiled A
+        println(".L.begin.%d:", seq);
+        if(node->cond) {
+            gen(node->cond); // the code which compiled B
+            println("    pop rax");
+            println("    cmp rax, 0");
+            println("    je  .L.end.%d", seq);
+        }
+        gen(node->then); // the code which compiled D
+        if(node->inc)
+            gen(node->inc);  // the code which compiled C
+        println("    jmp .L.begin.%d", seq);
+        println(".L.end.%d:", seq);
+        return;
+    }
+    case ND_BLOCK:
     case ND_STMT_EXPR: {
         if(node->body) {
             Node *n = node->body; // statementのリストの先頭
             println("#----- Block {...} / Statement expression");
-            // println("# debug: n->next->kind: %d", n->next->kind);
             for(; n; n = n->next)
-                gen_stmt(n);
+                gen(n);
         }
         // ひとつひとつのstatementは一つの値をスタックに残すので、毎回ポップするのをわすれないこと
         // TODO: bodyが空の時にエラーを表示する
         return;
     }
     case ND_FUNCALL: { // 関数呼び出し
-        println("#----- Function call with up to 6 parameters.");
+        println("#----- Function call with up to 6 parameters. ");
         int nargs = 0;
         for (Node *arg = node->args; arg; arg = arg->next) {
-            gen_expr(arg);
+            gen(arg);
             nargs++;
         }
 
@@ -147,7 +216,6 @@ static void gen_expr(Node *node) {
             15 : 01111
             16 : 10000
                  00000 => 0
-
             1 => 1
             2 => 2
             3 => 3
@@ -188,10 +256,26 @@ static void gen_expr(Node *node) {
         println("    push rax");       // raxの値(関数呼び出しの結果)をスタックにプッシュ
         return;
     }
+    case ND_RETURN:
+        gen(node->lhs); // returnの返り値になっている式のコードが出力される
+
+        // 関数呼び出し元に戻る
+        println("#----- Returns to the caller address.");
+        println("    pop rax"); // スタックトップから値をpopしてraxにセットする
+        println("    jmp .L.return.%s", funcname); // .L.returnラベルにジャンプ
+        return;
+    case ND_ADDR:
+        gen_addr(node->lhs);
+        return;
+    case ND_DEREF:
+        gen(node->lhs);
+        if(node->ty->kind != TY_ARRAY)
+            load(node->ty);
+        return;
     }
 
-    gen_expr(node->lhs);
-    gen_expr(node->rhs);
+    gen(node->lhs);
+    gen(node->rhs);
 
     println("    pop rdi");
     println("    pop rax");
@@ -215,7 +299,6 @@ static void gen_expr(Node *node) {
         /*
             rax: dividend
             rdi: divisor
-
             cqo: raxに入っている64ビットの値を128ビットに伸ばしてRDXとRAXにセットする(RDX:RAX)
             idiv: 符号あり除算命令(Signed division)
             ・RDXとRAXを取ってそれを合わせたものを128ビット整数とみなし(RDX:RAX)それを引数レジスタの64ビットの値(SRC)で割る
@@ -263,124 +346,9 @@ static void gen_expr(Node *node) {
         println("    setle al");
         println("    movzb rax, al");
         break;
-    default:
-        error_tok(node->tok, "invalid expression");
     }
 
     println("    push rax");
-}
-
-// 抽象構文木からアセンブリコードを生成する
-// statementを生成する
-static void gen_stmt(Node *node) {
-    // println("# debug: gen_stmt node->kind %d", node->kind);
-
-    switch(node->kind) {
-    case ND_NULL: // Empty statement
-        // println("# debug: Empty statement");
-        return;
-    case ND_IF: {
-        int seq = labelseq++;
-
-        println("#----- \"If\" statement");
-        if(node->els) {
-            gen_expr(node->cond); // expr Aをコンパイルしたコード スタックトップに値が積まれているはず
-            println("    pop rax");
-            println("    cmp rax, 0");
-            println("    je  .L.else.%d", seq);
-            gen_stmt(node->then); // stmt
-            println("    jmp .L.end.%d", seq);
-            println(".L.else.%d:", seq);
-            gen_stmt(node->els);  // stmt
-            println(".L.end.%d:", seq);
-        } else {
-            gen_expr(node->cond); // expr Aをコンパイルしたコード スタックトップに値が積まれているはず
-            println("    pop rax");
-            println("    cmp rax, 0");
-            println("    je  .L.end.%d", seq);
-            gen_stmt(node->then); // stmt
-            println(".L.end.%d:", seq);
-        }
-        return;
-    }
-    case ND_WHILE: {
-        int seq = labelseq++;
-        /* 
-            while(A) B
-            A: expression
-            B: statement
-        */
-        println("#----- \"While\" statement");
-        println(".L.begin.%d:", seq);
-        gen_expr(node->cond);    // Aをコンパイルしたコード
-        println("    pop rax");
-        println("    cmp rax, 0");
-        println("    je  .L.end.%d", seq);
-        gen_stmt(node->then);    // Bをコンパイルしたコード
-        println("    jmp .L.begin.%d", seq);
-        println(".L.end.%d:", seq);
-        return;
-    }
-    case ND_FOR: {
-        int seq = labelseq++;
-        /*
-            expression statement: 文 => 値を残してはいけない
-            - 式を評価して、結果を捨てる役割
-            - 必ず値が残ってしまう「式」という存在を、値を残さない「文」という存在に変換する
-
-            for(A;B;C) D
-            A: initialize  expression statement
-            B: condition   expression
-            C: increment   expression?
-            D:             statement
-        */
-        println("#----- \"For\" statement");
-        if(node->init)
-            gen_stmt(node->init); // the code which compiled A
-        println(".L.begin.%d:", seq);
-        if(node->cond) {
-            gen_expr(node->cond); // the code which compiled B
-            println("    pop rax");
-            println("    cmp rax, 0");
-            println("    je  .L.end.%d", seq);
-        }
-        gen_stmt(node->then); // the code which compiled D
-        if(node->inc)
-            gen_expr(node->inc);  // the code which compiled C
-        println("    jmp .L.begin.%d", seq);
-        println(".L.end.%d:", seq);
-        return;
-    }
-    case ND_BLOCK:
-        if(node->body) {
-            Node *n = node->body; // statementのリストの先頭
-            println("#----- Block {...} / Statement expression");
-            for(; n; n = n->next)
-                gen_stmt(n);
-        }
-        // ひとつひとつのstatementは一つの値をスタックに残すので、毎回ポップするのをわすれないこと
-        // TODO: bodyが空の時にエラーを表示する
-        return;
-    case ND_RETURN:
-        gen_expr(node->lhs); // returnの返り値になっている式のコードが出力される
-
-        // 関数呼び出し元に戻る
-        println("#----- Returns to the caller address.");
-        println("    pop rax"); // スタックトップから値をpopしてraxにセットする
-        println("    jmp .L.return.%s", funcname); // .L.returnラベルにジャンプ
-        return;
-    case ND_EXPR_STMT:
-        // expression (式):  値を一つ必ず残す
-        // statement (文):  値を必ず何も残さない
-        // println("# debug: ND_EXPR_STMT: node->lhs->tok->str: %s", strndup(node->lhs->tok->str, node->lhs->tok->len));
-        gen_expr(node->lhs);
-        println("#----- Expression statement");
-        println("    add rsp, 8");
-        return;
-    default:
-        // println("# debug: node->tok->kind: %d", node->tok->kind);
-        error_tok(node->tok, "invalid statement");
-    }
 }
 
 // リテラルの文字列はスタック上に存在している値ではなく、メモリ上の固定の位置に存在している
@@ -438,7 +406,7 @@ static void emit_text(Program *prog) {
         // Emit code
         for (Node *node = fn->node; node; node = node->next) {
             // 抽象構文木を降りながらコード生成
-            gen_stmt(node);
+            gen(node);
         }
 
         // Epilogue
