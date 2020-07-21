@@ -175,7 +175,7 @@ static void gen(Node *node) {
     case ND_STMT_EXPR: {
         if(node->body) {
             Node *n = node->body; // statementのリストの先頭
-            println("#----- Block {...} / Statement expression");
+            println("#----- Block {...} or Statement expression");
             for(; n; n = n->next)
                 gen(n);
         }

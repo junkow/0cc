@@ -639,10 +639,31 @@ static Node *stmt_expr(Token *tok) {
     if(cur->kind != ND_EXPR_STMT)
         error_tok(cur->tok, "stmt-expr returning void is not supported");
 
-    memcpy(cur, cur->lhs, sizeof(Node)); // 最後のnodeはnode->lhsを指すようになる
-    // curが単項のnodeで、curがND_EXPR_STMT, cur->lhsがND_NUMの場合
-    // curはアドレスはcurのアドレスで、kindがND_NUMになる
-    // 最後のstmtだけ式の結果をreturnしたいから?
+    memcpy(cur, cur->lhs, sizeof(Node)); // 最後のcurはアドレスはそのままで、中身はcur->lhsを指すようになる
+    /*
+        statementは一つしか許していないけど、複文({}:compound statement)として
+        複数のstatementをまとめてひとつのstatementにする
+        なので、nodeのアドレスは上記でnodeとして連結されているリストのアドレス(ND_EXPR_STMT)のものを使う
+        そして、最後のND_EXPR_STMTだけ式の結果をpushしたい
+        でもND_EXPR_STMTのままコード生成すると、statementの中の式の結果をpushした後に
+        Expression statementの処理
+        add rsp, 8
+        が実行されて、pushした値が消えてしまう(statementは値を残さないため?)
+        なので、そのnodeのアドレスを式として処理できるように、
+        式がセットされているnode->lhsをmemcpyする
+        例)
+        ({ 1; 2; 3; })
+        以下が順にリストで連結される
+        1 => node->kind = ND_EXPR_STMT, node->lhs->kind = ND_NUM(val=1)
+        2 => node->kind = ND_EXPR_STMT, node->lhs->kind = ND_NUM(val=2)
+        3 => node->kind = ND_EXPR_STMT, node->lhs->kind = ND_NUM(val=3)
+        最後の3のみ if(node->kind != NODE_EXPR_STMT) のチェック後に
+        memcpyされるので、node(statement)のアドレスに、もともとnode->lhs(expression)だったインスタンス(ND_NUM)がセットされている
+        つまりnodeのkindがND_EXPR_STMTから、式のND_NUMになっている
+        curが単項のnodeで、curがND_EXPR_STMT, cur->lhsがND_NUMの場合
+        curのアドレスで、kindがND_NUMになる
+    */
+
     return node;
 }
 
