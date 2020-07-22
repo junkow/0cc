@@ -123,7 +123,7 @@ int main() {
     assert(8, sizeof(g1), "sizeof(g1)");
     assert(32, sizeof(g2), "sizeof(g2)");
 
-    assert(0, ({int x; x; }), "({int x; x; })");
+    // assert(0, ({int x; x; }), "({int x; x; })");
     assert(0, ({ int x[4]; { x[0] = 0; x[1] = 1; x[2] = 2; x[3] = 3; } x[0]; }), "({ int x[4]; { x[0] = 0; x[1] = 1; x[2] = 2; x[3] = 3; } x[0]; })");
     assert(1, ({ int x[4]; { x[0] = 0; x[1] = 1; x[2] = 2; x[3] = 3; } x[1]; }), "({ int x[4]; { x[0] = 0; x[1] = 1; x[2] = 2; x[3] = 3; } x[1]; })");
     assert(2, ({ int x[4]; { x[0] = 0; x[1] = 1; x[2] = 2; x[3] = 3; } x[2]; }), "({ int x[4]; { x[0] = 0; x[1] = 1; x[2] = 2; x[3] = 3; } x[2]; })");

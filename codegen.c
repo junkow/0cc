@@ -7,6 +7,8 @@ static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static int labelseq = 1;
 static char *funcname;
 
+static int current_line_no = 0;
+
 static void println(char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
@@ -73,6 +75,11 @@ static void store(Type *ty) {
 
 // 抽象構文木からアセンブリコードを生成する
 static void gen(Node *node) {
+    if (current_line_no != node->tok->line_no) {
+        current_line_no = node->tok->line_no;
+        println("   .loc 1 %s", node->tok->line_no);
+    }
+
     switch(node->kind) {
     case ND_NULL: // Empty statement
         return;
