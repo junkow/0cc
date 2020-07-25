@@ -105,7 +105,6 @@ static void parse_args(int argc, char **argv) {
 
         if(!strncmp(argv[i], "-o", 2)) {
             output_path = argv[i] + 2;
-            printf("debug: strncmp output_path: %s\n", output_path);
             continue;
         }
 
