@@ -695,7 +695,7 @@ static Node *func_args(void) {
 static Node *primary(void) {
     Token *tok;
 
-    if (consume("(")) {
+    if (tok = consume("(")) {
         if(consume("{")) {
             // 次のトークンが"("かつ"{"なら stmt_expr "}" ")"となるはず
             Node *node = stmt_expr(tok);

@@ -75,9 +75,9 @@ static void store(Type *ty) {
 
 // 抽象構文木からアセンブリコードを生成する
 static void gen(Node *node) {
-    if (cur_line_no != node->tok->line_no) {
+    if (node->tok->line_no != cur_line_no) {
+        println("   .loc 1 %d", node->tok->line_no);
         cur_line_no = node->tok->line_no;
-        println("   .loc 1 %s", node->tok->line_no);
     }
 
     switch(node->kind) {
@@ -89,8 +89,8 @@ static void gen(Node *node) {
     case ND_EXPR_STMT:
         // expression (式):  値を一つ必ず残す
         // statement (文):  値を必ず何も残さない
-        gen(node->lhs);
         println("#----- Expression statement");
+        gen(node->lhs);
         println("    add rsp, 8");
         return;
     case ND_VAR: // 変数の値の参照
