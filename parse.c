@@ -584,8 +584,8 @@ static Node *new_sub(Node *lhs, Node *rhs, Token *tok) {
         return new_binary(ND_SUB, lhs, rhs, tok);
     if(lhs->ty->base && is_integer(rhs->ty))
         return new_binary(ND_PTR_SUB, lhs, rhs, tok);
-    if(is_integer(lhs->ty) && rhs->ty->base)
-        return new_binary(ND_PTR_DIFF, lhs, lhs, tok);
+    if(lhs->ty->base && rhs->ty->base)
+        return new_binary(ND_PTR_DIFF, lhs, rhs, tok);
 
     error_tok(tok, "invalid operands");
 }
