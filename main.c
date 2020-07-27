@@ -55,37 +55,6 @@ static char *read_file(char *path) {
     return buf;
 }
 
-int align_to(int n, int align) {
-    // `n`の値を最も近い`align`の倍数に丸める
-
-    // ~(align-1): alignの値の符号反転
-    // AND演算子: ビットを反転したいところは0にしておく
-    //           変えたくないところは1にしておく
-    // ・ align_to(5, 8)
-    //     00001110: n + align + 1
-    // AND 11111000: ~(align-1)
-    //     00001000: returns 8
-    //
-    // ・ align_to(11, 8)
-    //     00010100: n + align + 1
-    // AND 11111000: ~(align-1)
-    //     00010000: => returns 16
-    // return (n + align + 1) & ~(align-1);
-
-    // ・ align_to(5, 8)
-    // 00001110: n + align + 1
-    // 00000001: Shift right by 3 bits (8 = 2^3)
-    // 00001000: Shift left by 3 bits
-    // 00001000: => returns 8
-    //
-    // ・ align_to(11, 8)
-    // 00010100: n + aling + 1
-    // 00000010: Shift right by 3 bits
-    // 00010000: Shift left by 3 bits
-    // 00010000: => returns 16
-    return (n + align + 1) / align * align;
-}
-
 static void usage(int status) {
     fprintf(stderr, "9cc [ -o <path>] <file>\n");
     exit(status);

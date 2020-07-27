@@ -190,12 +190,14 @@ static bool is_function(void) {
 // gvar = basetype ident ("[" num "]")* ";"
 // global-var = gvar ( "," gvar )* ";"
 static void global_var(void) {
-    Type *ty = basetype();
+    Type *basety = basetype();
+    Type *ty;
     char *name = expect_ident();
-    ty = read_type_suffix(ty);
+    ty = read_type_suffix(basety);
+
     expect(";");
     new_gvar(name, ty); // varはscopeに関連づけられ、リストに連結されていく
-}
+} 
 
 // program = (function | global-var)*
 Program *program(void) {
@@ -275,6 +277,7 @@ static Type *struct_decl(void) {
         cur = cur->next;
     }
 
+    // Construct a struct object.
     Type *ty = calloc(1, sizeof(Type));
     ty->kind = TY_STRUCT;
     ty->members = head.next;
@@ -282,10 +285,15 @@ static Type *struct_decl(void) {
     // Assign offsets within the struct to members.
     int offset = 0;
     for (Member *mem = ty->members; mem; mem = mem->next) {
+        offset = align_to(offset, mem->ty->align);
         mem->offset = offset;
         offset += mem->ty->size;
+
+        if (ty->align < mem->ty->align)
+            ty->align = mem->ty->align;
     }
-    ty->size = offset;
+
+    ty->size = align_to(offset, ty->align);
 
     return ty;
 }
