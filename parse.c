@@ -560,7 +560,7 @@ static Node *relational(void) {
     }
 }
 
-// In C, `+` operator is overloaede to perform the pointer arithmetric.
+// In C, `+` operator is overloaded to perform the pointer arithmetric.
 // If p is a pointer, p+n adds not n but sizeof(*p)*n to the value of p,
 // so that p+n points to the location n elements (not bytes) ahead of p.
 // In other words, we need to scale an integer value(n) before adding to a 
@@ -594,7 +594,7 @@ static Node *new_add(Node *lhs, Node *rhs, Token *tok) {
     return new_binary(ND_ADD, lhs, rhs, tok);
 }
 
-// `-`演算子をpointer型の計算の場合はoverloadするために、値をscalingする
+// `-`演算子を、pointer型の計算の場合はoverloadするように、値をscalingする
 static Node *new_sub(Node *lhs, Node *rhs, Token *tok) {
     // 数値どうしか、アドレスの入った計算か判断するためにtypeを付与して判別
     add_type(lhs);
