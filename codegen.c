@@ -38,6 +38,10 @@ static void gen_addr(Node *node) {
     case ND_DEREF: // 左辺値に逆参照がきた場合に処理できるようにする
         gen(node->lhs); // 左辺を展開する
         return;
+    case ND_COMMA:
+        gen(node->lhs);
+        gen_addr(node->rhs);
+        return;
     }
 
     error_tok(node->tok, "not an lvalue");
@@ -76,7 +80,7 @@ static void store(Type *ty) {
 // 抽象構文木からアセンブリコードを生成する
 static void gen(Node *node) {
     if (node->tok->line_no != cur_line_no) {
-        println("   .loc 1 %d", node->tok->line_no);
+        println("    .loc 1 %d", node->tok->line_no);
         cur_line_no = node->tok->line_no;
     }
 
