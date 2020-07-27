@@ -458,8 +458,6 @@ static Node *stmt2(void) {
 // expression(式): 値を一つ必ず残す
 // expr = assign ("," expr)?
 static Node *expr(void) {
-    //return assign();
-
     Node *node = assign();
     Token *tok;
 
