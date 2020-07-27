@@ -72,6 +72,9 @@ void add_type(Node *node) {
     case ND_COMMA:
         node->ty = node->rhs->ty; // nodeの型は最後の式の型に指定
         return;
+    case ND_MEMBER:
+        node->ty = node->member->ty;
+        return;
     case ND_ADDR:      // unary & (単項, アドレス)
         // array型の場合その中身の要素の型が知りたい。node->lhs->tyがarray型なので、配列の中身の要素についてはnode->lhs->ty->baseにある
         if(node->lhs->ty->kind == TY_ARRAY)

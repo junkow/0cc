@@ -40,10 +40,16 @@ static void gen_addr(Node *node) {
         return;
     case ND_COMMA:
         // TODO: あとで確認する
-        println("#----- Comma operator. ");
+        println("#----- Comma operator");
         gen(node->lhs);
         println("    add rsp, 8");
         gen_addr(node->rhs);
+        return;
+    case ND_MEMBER:
+        gen_addr(node->lhs);
+        println("    pop rax");
+        println("    add rax, %d", node->member->offset);
+        println("    push rax");
         return;
     }
 
@@ -101,6 +107,7 @@ static void gen(Node *node) {
         println("    add rsp, 8");
         return;
     case ND_VAR: // 変数の値の参照
+    case ND_MEMBER: // structのmemberへのアクセス
         gen_addr(node);
 
         if(node->ty->kind != TY_ARRAY)

@@ -9,6 +9,7 @@
 #include <string.h>
 
 typedef struct Type Type;
+typedef struct Member Member;
 
 //
 // tokenizer.c
@@ -100,6 +101,7 @@ typedef enum {
     ND_LE,        // <=  less equal
     ND_ASSIGN,    // =  assign
     ND_COMMA,     // ,  comma
+    ND_MEMBER,    // . (struct member access)
     ND_ADDR,      // unary & (単項, アドレス)
     ND_DEREF,     // unary * (単項, 間接参照)
     ND_RETURN,    // "return"
@@ -138,6 +140,9 @@ struct Node {
     // stmt()で展開した複数のnodeを連結リストで表して、その先頭のアドレス
     Node *body;
 
+    // Struct member access
+    Member *member;
+
     // Function call
     char *funcname;
     Node *args; // 引数を連結リストで管理。そのリストの先頭のアドレス
@@ -174,6 +179,7 @@ typedef enum {
     TY_INT,
     TY_PTR,
     TY_ARRAY,
+    TY_STRUCT,
 } TypeKind;
 
 struct Type {
@@ -181,11 +187,21 @@ struct Type {
     int size;       // sizeof() value
     Type *base;
     int array_len;
+    Member *members; // struct
 };
 // e.g.
 // int a[2];と宣言した場合
 // ty->kind = TY_ARRAY
 // ty->base->kind = TY_INT
+
+
+// Struct member
+struct Member {
+    Member *next;
+    Type *ty;
+    char *name;
+    int offset;
+};
 
 extern Type *char_type;
 extern Type *int_type;

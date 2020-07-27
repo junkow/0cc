@@ -52,6 +52,8 @@ int foo(int *x, int y) {
 }
 
 int main() {
+    // Struct
+    assert(2, ({int x[5]; int *y = x+2; y-x;}), "({int x[5]; int *y = x+2; y-x;})");
     // Comma operator
     assert(3, (1,2,3), "(1,2,3)");
     assert(5, ({int i=2; int j=3; (i=5,j)=6; i; }), "({int i=2, j=3; (i=5,j)=6; i; })");
