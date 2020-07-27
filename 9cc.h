@@ -94,11 +94,12 @@ typedef enum {
     ND_PTR_DIFF,  // ptr - ptr
     ND_MUL,       // *
     ND_DIV,       // /
-    ND_EQ,        // == : equal
-    ND_NE,        // != : not equal
-    ND_LT,        // <  : less than
-    ND_LE,        // <= : less equal
-    ND_ASSIGN,    // = : assign
+    ND_EQ,        // ==  equal
+    ND_NE,        // !=  not equal
+    ND_LT,        // <   less than
+    ND_LE,        // <=  less equal
+    ND_ASSIGN,    // =  assign
+    ND_COMMA,     // ,  comma
     ND_ADDR,      // unary & (単項, アドレス)
     ND_DEREF,     // unary * (単項, 間接参照)
     ND_RETURN,    // "return"

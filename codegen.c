@@ -39,7 +39,10 @@ static void gen_addr(Node *node) {
         gen(node->lhs); // 左辺を展開する
         return;
     case ND_COMMA:
+        // TODO: あとで確認する
+        println("#----- Comma operator. ");
         gen(node->lhs);
+        println("    add rsp, 8");
         gen_addr(node->rhs);
         return;
     }
@@ -194,6 +197,13 @@ static void gen(Node *node) {
         // TODO: bodyが空の時にエラーを表示する
         return;
     }
+    case ND_COMMA:
+        // TODO: あとで確認
+        println("#----- Comma operator. ");
+        gen(node->lhs);
+        println("    add rsp, 8"); // 最後の式の結果以外を捨てる
+        gen(node->rhs);
+        return;
     case ND_FUNCALL: { // 関数呼び出し
         println("#----- Function call with up to 6 parameters. ");
         int nargs = 0;

@@ -456,9 +456,18 @@ static Node *stmt2(void) {
 }
 
 // expression(式): 値を一つ必ず残す
-// expr = assign
+// expr = assign ("," expr)?
 static Node *expr(void) {
-    return assign();
+    //return assign();
+
+    Node *node = assign();
+    Token *tok;
+
+    if (tok = consume(",")) {
+        node = new_binary(ND_COMMA, node, expr(), tok);
+    }
+
+    return node;
 }
 
 // assign = equality ("=" assign)?
