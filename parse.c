@@ -560,30 +560,53 @@ static Node *relational(void) {
     }
 }
 
+// In C, `+` operator is overloaede to perform the pointer arithmetric.
+// If p is a pointer, p+n adds not n but sizeof(*p)*n to the value of p,
+// so that p+n points to the location n elements (not bytes) ahead of p.
+// In other words, we need to scale an integer value(n) before adding to a 
+// pointer value. This function takes care of the scaling.
 static Node *new_add(Node *lhs, Node *rhs, Token *tok) {
     // 数値どうしか、アドレスの入った計算か判断するためにtypeを付与して判別
     add_type(lhs);
     add_type(rhs);
 
+    // num + num
     if(is_integer(lhs->ty) && is_integer(rhs->ty))
         return new_binary(ND_ADD, lhs, rhs, tok);
+    // ptr + num
     if(lhs->ty->base && is_integer(rhs->ty))
         return new_binary(ND_PTR_ADD, lhs, rhs, tok);
-    if(is_integer(lhs->ty) && rhs->ty->base)
-        return new_binary(ND_PTR_ADD, rhs, lhs, tok);
 
-    error_tok(tok, "invalid operands");
+    if(lhs->ty->base && rhs->ty->base)
+        error_tok(tok, "invalid operands");
+
+    // Canonicalize `num` + `ptr` to `ptr` + num.
+    // 正規化する
+    if(!lhs->ty->base && rhs->ty->base) {
+        Node *tmp = rhs;
+        lhs = rhs;
+        rhs = tmp;
+    }
+
+    // ptr + num
+    rhs = new_binary(ND_MUL, rhs, new_node_num(lhs->ty->base->size, tok), tok);
+
+    return new_binary(ND_ADD, lhs, rhs, tok);
 }
 
+// `-`演算子をpointer型の計算の場合はoverloadするために、値をscalingする
 static Node *new_sub(Node *lhs, Node *rhs, Token *tok) {
     // 数値どうしか、アドレスの入った計算か判断するためにtypeを付与して判別
     add_type(lhs);
     add_type(rhs);
 
+    // num - num
     if(is_integer(lhs->ty) && is_integer(rhs->ty))
         return new_binary(ND_SUB, lhs, rhs, tok);
+    // ptr - num
     if(lhs->ty->base && is_integer(rhs->ty))
         return new_binary(ND_PTR_SUB, lhs, rhs, tok);
+    // ptr - ptr, which returns how many elements are between the two.
     if(lhs->ty->base && rhs->ty->base)
         return new_binary(ND_PTR_DIFF, lhs, rhs, tok);
 
