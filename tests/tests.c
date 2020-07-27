@@ -54,6 +54,30 @@ int foo(int *x, int y) {
 int main() {
     // Struct
     assert(2, ({int x[5]; int *y = x+2; y-x;}), "({int x[5]; int *y = x+2; y-x;})");
+
+    assert(1, ({struct {int a; int b;} x; x.a = 1; x.b = 2; x.a; }), "({struct {int a; int b;} x; x.a = 1; x.b = 2; x.a; })");
+    assert(2, ({struct {int a; int b;} x; x.a = 1; x.b = 2; x.b; }), "({struct {int a; int b;} x; x.a = 1; x.b = 2; x.b; })");
+    assert(1, ({struct {char a; char b; char c;} x; x.a = 1; x.b = 2; x.c = 3; x.a;}), "({struct {char a; char b; char c;} x; x.a = 1; x.b = 2; x.c = 3; x.a;})");
+    assert(2, ({struct {char a; char b; char c;} x; x.a = 1; x.b = 2; x.c = 3; x.b;}), "({struct {char a; char b; char c;} x; x.a = 1; x.b = 2; x.c = 3; x.b;})");
+    assert(3, ({struct {char a; char b; char c;} x; x.a = 1; x.b = 2; x.c = 3; x.c;}), "({struct {char a; char b; char c;} x; x.a = 1; x.b = 2; x.c = 3; x.c;})");
+
+    assert(0, ({struct {char a; char b;} x[3]; char *p=x; p[0] = 0; x[0].a;}), "({struct {char a; char b;} x[3]; char *p=x; p[0] = 0; p[0].a;})");
+    assert(1, ({struct {char a; char b;} x[3]; char *p=x; p[1] = 1; x[0].b;}), "({struct {char a; char b;} x[3]; char *p=x; p[1] = 1; x[0].b;})");
+    assert(2, ({struct {char a; char b;} x[3]; char *p=x; p[2] = 2; x[1].a;}), "({struct {char a; char b;} x[3]; char *p=x; p[2] = 2; x[1].a;})");
+    assert(3, ({struct {char a; char b;} x[3]; char *p=x; p[3] = 3; x[1].b;}), "({struct {char a; char b;} x[3]; char *p=x; p[3] = 3; x[1].b;})");
+
+    assert(6, ({struct {char a[3]; char b[5];} x; char *p = &x; x.a[0]=6; p[0];}), "({struct {char a[3]; char b[5];} x; char *p = &x; x.a[0]=6; p[0];})");
+    assert(7, ({struct {char a[3]; char b[5];} x; char *p = &x; x.b[0]=7; p[3];}), "({struct {char a[3]; char b[5];} x; char *p = &x; x.b[0]=7; p[3];})");
+
+    assert(6, ({struct {struct {char b;} a;} x; x.a.b=6; x.a.b; }), "({struct {struct {char b;} a;} x; x.a.b=6; x.a.b; })");
+
+    assert(8, ({struct {int a;} x; sizeof(x);}), "({struct {int a;} x; sizeof(x);})");
+    assert(16, ({struct {int a; int b;} x; sizeof(x);}), "({struct {int a; int b;} x; sizeof(x);})");
+    assert(24, ({struct {int a[3];} x; sizeof(x);}), "({struct {int a[3];} x; sizeof(x);})");
+    assert(32, ({struct {int a;} x[4]; sizeof(x);}), "({struct {int a;} x[4]; sizeof(x);})");
+    assert(48, ({struct {int a[3];} x[2]; sizeof(x);}), "({struct {int a[3];} x[2]; sizeof(x);})");
+    assert(2, ({struct {char a; char b;} x; sizeof(x);}), "({struct {char a; char b;} x; sizeof(x);})");
+    assert(9, ({struct {int a; char b;} x; sizeof(x);}), "({struct {int a; char b;} x; sizeof(x);})");
     // Comma operator
     assert(3, (1,2,3), "(1,2,3)");
     assert(5, ({int i=2; int j=3; (i=5,j)=6; i; }), "({int i=2, j=3; (i=5,j)=6; i; })");

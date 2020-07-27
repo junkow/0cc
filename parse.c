@@ -663,7 +663,7 @@ static Node *unary(void) {
     return postfix();
 }
 
-static Member *find_member(Type *ty, char *name) {
+static Member *get_struct_member(Type *ty, char *name) {
     for(Member *mem = ty->members; mem; mem = mem->next) {
         if(!strcmp(mem->name, name))
             return mem;
@@ -678,7 +678,7 @@ static Node *struct_ref(Node *lhs) {
         error_tok(lhs->tok, "not a struct");
 
     Token *tok = token;
-    Member *mem = find_member(lhs->ty, expect_ident());
+    Member *mem = get_struct_member(lhs->ty, expect_ident());
     if(!mem)
         error_tok(tok, "no such member");
 
