@@ -63,9 +63,9 @@ static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok) {
     return node;
 }
 
-static Node *new_unary(NodeKind kind, Node *lhs, Token *tok) {
+static Node *new_unary(NodeKind kind, Node *expr, Token *tok) {
     Node *node = new_node(kind, tok);
-    node->lhs = lhs;
+    node->lhs = expr;
     return node;
 }
 
@@ -584,22 +584,10 @@ static Node *new_add(Node *lhs, Node *rhs, Token *tok) {
     // ptr + num
     if(lhs->ty->base && is_integer(rhs->ty))
         return new_binary(ND_PTR_ADD, lhs, rhs, tok);
+    if(is_integer(lhs->ty) && rhs->ty->base)
+        return new_binary(ND_PTR_ADD, rhs, lhs, tok);
 
-    if(lhs->ty->base && rhs->ty->base)
-        error_tok(tok, "invalid operands");
-
-    // Canonicalize `num` + `ptr` to `ptr` + num.
-    // 正規化する
-    if(!lhs->ty->base && rhs->ty->base) {
-        Node *tmp = rhs;
-        lhs = rhs;
-        rhs = tmp;
-    }
-
-    // ptr + num
-    rhs = new_binary(ND_MUL, rhs, new_node_num(lhs->ty->base->size, tok), tok);
-
-    return new_binary(ND_ADD, lhs, rhs, tok);
+    error_tok(tok, "invalid operands");
 }
 
 // `-`演算子を、pointer型の計算の場合はoverloadするように、値をscalingする

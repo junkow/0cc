@@ -27,6 +27,7 @@ static void gen_addr(Node *node) {
             println("#----- Local variable");
             println("#----- Pushes the given node's memory address to the stack.");
             // srcオペランドのメモリアドレスを計算し、distオペランドにロードする
+            println("# DEBUG: var->name: %s", var->name);
             println("    lea rax, [rbp-%d]", var->offset); // lea : load effective address
             println("    push rax"); // raxの値(ローカル変数のメモリアドレス)をスタックにpushする
         } else {
@@ -313,14 +314,14 @@ static void gen(Node *node) {
         println("    add rax, rdi");
         break;
     case ND_PTR_ADD:
-        println("    imul rdi, %d", node->ty->base->size);  // この数値(rdi)はアドレスなので、8倍する
+        println("    imul rdi, %d", node->ty->base->size);  // この数値(rdi)はアドレスなので、basetypeのsizeにscaleを合わせる
         println("    add rax, rdi"); // num + num の形
         break;
     case ND_SUB:
         println("    sub rax, rdi");
         break;
     case ND_PTR_SUB:
-        println("    imul rdi, %d", node->ty->base->size);  // この数値(rdi)はアドレスなので、8倍する
+        println("    imul rdi, %d", node->ty->base->size);  // この数値(rdi)はアドレスなので、basetypeのsizeにscaleを合わせる
         println("    sub rax, rdi"); // num - num の形
         break;
     case ND_PTR_DIFF:

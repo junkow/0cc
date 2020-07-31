@@ -44,7 +44,7 @@ int align_to(int n, int align) {
     // 00000010: Shift right by 3 bits
     // 00010000: Shift left by 3 bits
     // 00010000: => returns 16
-    return (n + align + 1) / align * align;
+    return (n + align - 1) / align * align;
 }
 
 // pointerのTypeのインスタンスを作成してそれを返す

@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
     }
 
     // Emit a .file directice for the assembler.
-    fprintf(output_file, ".file 1 \"%s\"\n", argv[1]);
+    fprintf(output_file, ".file 1 \"%s\"\n", input_path);
 
     // アセンブリコード生成
     // Traverse the AST to emit assembly.
