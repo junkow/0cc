@@ -77,6 +77,7 @@ int main() {
     assert(32, ({struct {int a;} x[4]; sizeof(x);}), "({struct {int a;} x[4]; sizeof(x);})");
     assert(48, ({struct {int a[3];} x[2]; sizeof(x);}), "({struct {int a[3];} x[2]; sizeof(x);})");
     assert(2, ({struct {char a; char b;} x; sizeof(x);}), "({struct {char a; char b;} x; sizeof(x);})");
+    // 8の倍数でalignmentされる
     assert(16, ({struct {char a; int b;} x; sizeof(x);}), "({struct {int a; char b;} x; sizeof(x);})");
     assert(16, ({struct {int a; char b;} x; sizeof(x);}), "({struct {int a; char b;} x; sizeof(x);})");
     // Comma operator

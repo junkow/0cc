@@ -31,13 +31,6 @@ static void verror_at(int line_no, char *loc, char *fmt, va_list ap) {
     while (*end != '\n')
         end++;
 
-    // 行数を取得する
-    // int line_no = 1;
-    // for(char *p = current_input; p < line; p++) {
-    //     if(*p == '\n')
-    //         line_no++;
-    // }
-
     // その行を表示する
     int indent = fprintf(stderr, "%s:%d: ", current_filename, line_no);
     fprintf(stderr, "%.*s\n", (int)(end - line), line);
