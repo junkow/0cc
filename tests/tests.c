@@ -52,7 +52,10 @@ int foo(int *x, int y) {
 }
 
 int main() {
-    // Struct
+    // align local variables
+    assert(15, ({int x; char y; int a = &x; int b = &y; b-a;}), "({int x; char y; int a = &x; int b = &y; b-a;})");
+    assert(1, ({char x; int y; int a = &x; int b = &y; b-a;}), "({int x; char y; int a = &x; int b = &y; b-a;})");
+    // Struct(align members)
     assert(2, ({int x[5]; int *y = x+2; y-x;}), "({int x[5]; int *y = x+2; y-x;})");
 
     assert(1, ({struct {int a; int b;} x; x.a = 1; x.b = 2; x.a; }), "({struct {int a; int b;} x; x.a = 1; x.b = 2; x.a; })");
