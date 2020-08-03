@@ -355,7 +355,8 @@ Token *tokenize(char *filename, char *p) {
         // Multi-letter punctuators
         // 複数文字の方を先に書く
         if(startswith(p, "==") || startswith(p, "!=") ||
-           startswith(p, "<=") || startswith(p, ">=")) {
+           startswith(p, "<=") || startswith(p, ">=") ||
+           startswith(p, "->")) {
             cur = new_token(TK_RESERVED, cur, p, 2); // pの値を入力後pを2つ進める
             p += 2;
             continue;

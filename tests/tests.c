@@ -52,6 +52,9 @@ int foo(int *x, int y) {
 }
 
 int main() {
+    // add "->" operator
+    assert(3, ({ struct t {char a;} x; struct t *y = &x; x.a = 3; y->a; }), "({ struct t {char a;} x; struct t *y = &x; x.a = 3; y->a; })");
+    assert(3, ({ struct t {char a;} x; struct t *y = &x; y->a=3; x.a; }), "({ struct t {char a;} x; struct t *y = &x; y->a=3; x.a; })");
     // add struct tag
     assert(16, ({ struct t {int a; int b;} x; struct t y; sizeof(y); }), "({ struct t {int a; int b;} x; struct t y; sizeof(y); })");
     assert(16, ({ struct t {int a; int b;}; struct t y; sizeof(y); }), "({ struct t {int a; int b;}; struct t y; sizeof(y); })");

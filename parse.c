@@ -745,9 +745,10 @@ static Node *struct_ref(Node *lhs) {
     return node;
 }
 
-// 配列の表現 []演算子を追加
-// 構造体の表現 . ident: 構造体のメンバへのアクセス演算子
-// postfix = primary ("[" expr "]" | "." ident)*
+// postfix = primary ("[" expr "]" | "." ident | "->" ident)*
+// 配列の表現 []演算子
+// 構造体の表現 primary . ident: 構造体のメンバへのアクセス演算子( x.y : xは構造体の実体)
+// 構造体の表現 primary -> ident: x->y == (*x).y : xはアドレスなのでderefする
 static Node *postfix(void) {
     Node *node = primary();
     Token *tok;
@@ -762,6 +763,13 @@ static Node *postfix(void) {
         }
 
         if(tok = consume(".")) {
+            node = struct_ref(node);
+            continue;
+        }
+
+        if(tok = consume("->")) {
+            // x->y is shot for (*x).y
+            node = new_unary(ND_DEREF, node, tok);
             node = struct_ref(node);
             continue;
         }
