@@ -52,6 +52,12 @@ int foo(int *x, int y) {
 }
 
 int main() {
+    // Union
+    assert(8, ({ union {int a; char b[6];} x; sizeof(x); }), "({ union {int a; char b[6];} x; sizeof(x); })");
+    assert(3, ({ union {int a; char b[4];} x; x.a = 515; x.b[0]; }), "({ union {int a; char b[4];} x; x.a = 515; x.b[0]; })");
+    assert(2, ({ union {int a; char b[4];} x; x.a = 515; x.b[1]; }), "({ union {int a; char b[4];} x; x.a = 515; x.b[1]; })");
+    assert(0, ({ union {int a; char b[4];} x; x.a = 515; x.b[2]; }), "({ union {int a; char b[4];} x; x.a = 515; x.b[1]; })");
+    assert(0, ({ union {int a; char b[4];} x; x.a = 515; x.b[3]; }), "({ union {int a; char b[4];} x; x.a = 515; x.b[1]; })");
     // add "->" operator
     assert(3, ({ struct t {char a;} x; struct t *y = &x; x.a = 3; y->a; }), "({ struct t {char a;} x; struct t *y = &x; x.a = 3; y->a; })");
     assert(3, ({ struct t {char a;} x; struct t *y = &x; y->a=3; x.a; }), "({ struct t {char a;} x; struct t *y = &x; y->a=3; x.a; })");

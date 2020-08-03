@@ -8,7 +8,7 @@ struct VarScope {
     Var *var;
 };
 
-// Scope for struct tags
+// Scope for struct or union tags
 typedef struct TagScope TagScope;
 struct TagScope {
     TagScope *next;
@@ -186,6 +186,7 @@ static Function *function(void);
 static Type *read_type_suffix(Type *base);
 static Type *basetype(void);
 static Type *struct_decl(void);
+static Type *union_decl(void);
 static Member *struct_member(void);
 static void global_var(void);
 static VarList *read_func_params(void);
@@ -260,7 +261,7 @@ Program *program(void) {
 }
 
 // baseType(Type構造体のbase propertyにあたる)を返す
-// basetype = ("char" | "int" | struct_decl) "*"*
+// basetype = ("char" | "int" | struct_decl | union-decl) "*"*
 static Type *basetype(void) {
     if (!is_typename())
         error_tok(token, "typename expected");
@@ -273,9 +274,12 @@ static Type *basetype(void) {
     else if (consume("int")) {
         ty = int_type;
     }
-    else {
+    else if (peek("struct")) {
         ty = struct_decl();
-    } 
+    }
+    else if (peek("union")) {
+        ty = union_decl();
+    }
 
     while(consume("*"))
         // もしderefの記号`*`があったら、kindにTY_PTRを設定したTypeになる
@@ -347,6 +351,49 @@ static Type *struct_decl(void) {
     ty->size = align_to(offset, ty->align);
 
     // Register the struct type if a name was given.
+    if(tag)
+        push_tag_scope(tag, ty);
+
+    return ty;
+}
+
+static Type *union_decl(void) {
+    expect("union");
+    Token *tag = consume_ident();
+
+    if(tag && !peek("{")) {
+        TagScope *tsc = find_tag(tag);
+        if(!tsc)
+            error_tok(tag, "unknown struct type.");
+        return tsc->ty;
+    }
+
+    expect("{");
+
+    // Read member
+    Member head = {};
+    Member *cur = &head;
+
+    while(!consume("}")) {
+        cur->next = struct_member();
+        cur = cur->next;
+    }
+ 
+    Type *ty = calloc(1, sizeof(Type));
+    ty->kind = TY_STRUCT;
+    ty->members = head.next;
+
+    // unionの場合、すでに0で初期化されているので、offsetを割り当てる必要はない
+    // しかし、alignmentとsizeは計算する必要がある
+    for(Member *mem = ty->members; mem; mem = mem->next) {
+        if(ty->align < mem->ty->align)
+            ty->align = mem->ty->align;
+        if(ty->size < mem->ty->size)
+            ty->size = mem->ty->size;
+    }
+
+    ty->size = align_to(ty->size, ty->align);
+
     if(tag)
         push_tag_scope(tag, ty);
 
@@ -464,7 +511,7 @@ static Node *declaration(void) {
 
 // 次のtokenがtype名を表現していたら、trueを返す
 static bool is_typename(void) {
-    return ( peek("char") || peek("int") || peek("struct") );
+    return ( peek("char") || peek("int") || peek("struct") || peek("union") );
 }
 
 static Node *read_expr_stmt(void) {

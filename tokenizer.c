@@ -161,7 +161,7 @@ static bool is_alnum(char c) {
 static char *is_keyword(char *p) {
     // Keywords
     static char *kw[] = {"return", "if", "else", "while", "for", "int",
-                         "char", "sizeof", "struct"};
+                         "char", "sizeof", "struct", "union"};
 
     for(int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
         int len = strlen(kw[i]);
