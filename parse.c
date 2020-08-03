@@ -8,13 +8,26 @@ struct VarScope {
     Var *var;
 };
 
+// Scope for struct tags
+typedef struct TagScope TagScope;
+struct TagScope {
+    TagScope *next;
+    char *name;
+    int depth;
+    Type *ty;
+};
+
 // 変数をまとめるリスト
 // ローカル変数と引数をまとめるリスト
 // パーズ中に作成されたすべてのlocal variableインスタンスをまとめる
 static VarList *locals;
+// 同様にglobal変数をまとめるリスト
 static VarList *globals;
 
+// C has two block scopes; one is for variables and
+// the other is for struct tags.
 static VarScope *var_scope;
+static TagScope *tag_scope;
 
 // blockの始まりに、1だけincrementされる
 // block scopeの終わりに、1だけdecrementされる
@@ -28,6 +41,9 @@ static void leave_scope(void) {
     scope_depth--;
     while(var_scope && var_scope->depth > scope_depth)
         var_scope = var_scope->next;
+
+    while(tag_scope && tag_scope->depth > scope_depth)
+        tag_scope = tag_scope->next;
 }
 
 // File a variable by name
@@ -40,6 +56,15 @@ static Var *find_var(Token *tok) {
             // 変数名がリストから見つかったら、その位置のvar構造体のポインタを返す
             return sc->var;
         }
+    }
+
+    return NULL;
+}
+
+static TagScope *find_tag(Token *tok) {
+    for(TagScope *tsc = tag_scope; tsc; tsc = tsc->next) {
+        if(strlen(tsc->name) == tok->len && !strncmp(tok->str, tsc->name, tok->len))
+            return tsc;
     }
 
     return NULL;
@@ -93,6 +118,17 @@ static VarScope *push_scope(char *name, Var *var) {
     var_scope = sc;
 
     return sc;
+}
+
+static TagScope *push_tag_scope(Token *tok, Type *ty) {
+    TagScope *tsc = calloc(1, sizeof(TagScope));
+    tsc->next = tag_scope;
+    tsc->name = strndup(tok->str, tok->len);
+    tsc->ty = ty;
+    tsc->depth = scope_depth;
+    tag_scope = tsc;
+
+    return tsc;
 }
 
 // 変数を作成
@@ -263,12 +299,27 @@ static Type *read_type_suffix(Type *base) {
     return array_of(base, sz);
 }
 
-// struct-decl = "struct" "{" struct-member "}"
+// struct-decl = "struct" ident
+//             | "struct" ident? "{" struct-member "}"
 static Type *struct_decl(void) {
-    // Read struct members.
     expect("struct");
+
+    // Read a struct tag.
+    Token *tag = consume_ident();
+    // struct型そのものの定義ではない場合(変数宣言などの場合のsturct宣言)
+    // tagが識別子かつ、次のtokenが"{"ではない場合
+    if (tag && !peek("{")) {
+        TagScope *tsc = find_tag(tag);
+        if(!tsc)
+            error_tok(tag, "unknown struct type.");
+
+        return tsc->ty;
+    }
+
+    // struct型の定義そのものの場合
     expect("{");
 
+    // Read struct members.
     Member head = {};
     Member *cur = &head;
 
@@ -294,6 +345,10 @@ static Type *struct_decl(void) {
     }
 
     ty->size = align_to(offset, ty->align);
+
+    // Register the struct type if a name was given.
+    if(tag)
+        push_tag_scope(tag, ty);
 
     return ty;
 }
@@ -373,6 +428,7 @@ static Function *function() {
 
 // 文
 // declaration = basetype ident ("[" num "]")* ("=" expr)? ";"
+//             | basetype ";"
 /*
     e.g.
     int a;
@@ -381,10 +437,15 @@ static Function *function() {
     int a = (1 <= 3);
     int a[3];
     int a[3][2];
+    struct t{int a; int b;} x; // identつきのstruct宣言
+    struct t{int a; int b;};   // identなしのstruct宣言
 */
 static Node *declaration(void) {
     Token *tok = token;
     Type *ty = basetype();
+    if (consume(";"))
+        return new_node(ND_NULL, tok);
+
     char *name = expect_ident();
     ty = read_type_suffix(ty);
     Var *var = new_lvar(name, ty);
@@ -499,7 +560,7 @@ static Node *stmt2(void) {
     }
 
     if(is_typename()) {
-        // declaration()内のbasetype関数でtokenの"int"をチェックしたいので、トークンを進めないpeekを使う
+        // declaration()内のbasetype関数でtokenのtype名をチェックしたいので、トークンを進めないpeekを使う
         return declaration();
     }
 

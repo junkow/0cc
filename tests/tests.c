@@ -52,12 +52,17 @@ int foo(int *x, int y) {
 }
 
 int main() {
+    // add struct tag
+    assert(16, ({ struct t {int a; int b;} x; struct t y; sizeof(y); }), "({ struct t {int a; int b;} x; struct t y; sizeof(y); })");
+    assert(16, ({ struct t {int a; int b;}; struct t y; sizeof(y); }), "({ struct t {int a; int b;}; struct t y; sizeof(y); })");
+    assert(2, ({ struct t {char a[2];}; { struct t {char a[4];}; } struct t y; sizeof(y); }), "({ struct t {char a[2];}; { struct t {char a[4];}; } struct t y; sizeof(y); })");
+    assert(3, ({ struct t {int x;}; int t=1; struct t y; y.x=2; t + y.x; }), "({ struct t {int x;}; int t=1; struct t y; y.x=2; t + y.x; })");
     // align local variables
     assert(15, ({int x; char y; int a = &x; int b = &y; b-a;}), "({int x; char y; int a = &x; int b = &y; b-a;})");
     assert(1, ({char x; int y; int a = &x; int b = &y; b-a;}), "({int x; char y; int a = &x; int b = &y; b-a;})");
     // Struct(align members)
     assert(2, ({int x[5]; int *y = x+2; y-x;}), "({int x[5]; int *y = x+2; y-x;})");
-
+ 
     assert(1, ({struct {int a; int b;} x; x.a = 1; x.b = 2; x.a; }), "({struct {int a; int b;} x; x.a = 1; x.b = 2; x.a; })");
     assert(2, ({struct {int a; int b;} x; x.a = 1; x.b = 2; x.b; }), "({struct {int a; int b;} x; x.a = 1; x.b = 2; x.b; })");
     assert(1, ({struct {char a; int b; char c;} x; x.a = 1; x.b = 2; x.c = 3; x.a;}), "({struct {char a; int b; char c;} x; x.a = 1; x.b = 2; x.c = 3; x.a;})");
