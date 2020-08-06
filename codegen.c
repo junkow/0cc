@@ -64,6 +64,15 @@ static void gen_lval(Node *node) {
 }
 
 static void load(Type *ty) {
+    // If it is an array, do nothing because in general we can't load 
+    // an entire array to a register. 
+    // (The data amount is too large to store it to an register.)
+    // As a result, the result of an evalutation of
+    // an array becomes not the array itself but the address of the array.
+    // In other words, this is where
+    // "array is automatically converted to a pointer to the first element of the array in C"
+    // occurs.
+
     println("#----- Load a value from the memory address.");
     println("    pop rax"); // スタックトップからローカル変数のアドレスをpopしてraxに保存する
     
@@ -77,13 +86,33 @@ static void load(Type *ty) {
 
 static void store(Type *ty) {
     println("#----- Store a value to the memory address.");
+
     println("    pop rdi"); // スタックトップの値(右辺値)をrdiにロードする
     println("    pop rax"); // スタックトップの値(アドレス)をraxにロードする
-    
-    if( ty->size == 1 )
+
+    //if(ty->kind == TY_STRUCT) {
+        // println("#DEBUG: ---- TY_STRUCT\n");
+        // for(int i = 0; i < ty->size; i++) {
+        //     /*
+        //         e.g.
+        //         struct t {int a; int b;} x;
+        //         struct t y;
+        //         y = x;
+        //     */
+        //     // rdi: 変数xのアドレス(assignする値を持っている)
+        //     // rax: 変数yのアドレス(assignされる側)
+        //     // 1バイトずつ値をコピー?
+        //     println("#    movsx rsi, byte ptr [rdi+%d]", i);
+        //     println("#    mov [rax+%d], sil", i);
+        // }
+        // println("    mov rdi, [rdi]");
+        // println("    mov [rax], rdi");
+    if( ty->size == 1 ) {
         println("    mov [rax], dil"); // 1バイトの書き出し
-    else
+    } else {
         println("    mov [rax], rdi"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
+    }
+
     println("    push rdi"); // rdiの値をスタックにpush
 }
 
@@ -430,7 +459,6 @@ static void emit_text(Program *prog) {
         int i = 0;
         for(VarList *vl = fn->params; vl; vl = vl->next)
             load_arg(vl->var, i++);
-
 
         // Emit code
         for (Node *node = fn->node; node; node = node->next) {
