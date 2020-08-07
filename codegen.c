@@ -94,23 +94,25 @@ static void store(Type *ty) {
     println("    pop rax"); // スタックトップの値(アドレス)をraxにロードする
 
     if(ty->kind == TY_STRUCT) {
-        println("#DEBUG: ---- TY_STRUCT\n");
-        // for(int i = 0; i < ty->size; i++) {
-        //     /*
-        //         e.g.
-        //         struct t {int a; int b;} x;
-        //         struct t y;
-        //         y = x;
-        //     */
-        //     // rdi: 変数xのアドレス(assignする値を持っている)
-        //     // rax: 変数yのアドレス(assignされる側)
-        //     // 1バイトずつ値をコピー?
-        //     // println("#    movsx rsi, byte ptr [rdi+%d]", i);
-        //     // println("#    mov [rax+%d], sil", i);
-        // }
+        println("#----- TY_STRUCT\n");
+        // TODO: あとで実装確認
+        for(int i = 0; i < ty->size; i++) {
+            /*
+                e.g.
+                struct t {int a; int b;} x;
+                struct t y;
+                y = x;
+            */
+            // rdi: 変数xのアドレス(assignする値を持っている)
+            // rax: 変数yのアドレス(assignされる側)
+            // 1バイトずつ値をコピー?
+            println("    movsx rsi, byte ptr [rdi+%d]", i);
+            println("    mov [rax+%d], sil", i);
+        }
 
-        println("    mov rdi, [rdi]");
-        println("    mov [rax], rdi");
+        // TODO: この部分必要かどうかあとで検討
+        println("    push rsi");
+        println("    add rsp, 8");
     } else if ( ty->size == 1 ) {
         println("    mov [rax], dil"); // 1バイトの書き出し
     } else {

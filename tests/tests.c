@@ -53,7 +53,12 @@ int foo(int *x, int y) {
 
 int main() {
     // Struct assignment
-    assert(3, ({ struct t {int a; int b;} x; struct t y; x.a=3; y=x; y.a; }), "({ struct t {int a; int b;} x; struct t y; x.a=3; y=x; y.a; })");
+    assert(3, ({ struct t {int a; int b;} x; struct t y; x.a=3; y=x; y.a; }), "({ struct t {int a; int b;} x; struct t y; x.a=5; y=x; y.a; })");
+    assert(5, ({ struct t {int a; int b;} x; struct t y; x.b=5; y=x; y.b; }), "({ struct t {int a; int b;} x; struct t y; x.b=5; y=x; y.b; })");
+    assert(7, ({ struct t {int a; int b;}; struct t x; x.a=7; struct t y; struct t *z=&y; *z=x; y.a; }), "({ struct t {int a; int b;}; struct t x; x.a=7; struct t y; struct t *z=&y; *z=x; y.a; })");
+    assert(7, ({ struct t {int a; int b;}; struct t x; x.a=7; struct t y; struct t *p=&x; struct t *q=&y; *q=*p; y.a; }), "({ struct t {int a; int b;}; struct t x; x.a=7; struct t y; struct t *p=&x; struct t *q=&y; *q=*p; y.a; })");
+    assert(5, ({ struct t {char a; char b;} x; struct t y; x.a=5; y=x; y.a; }), "({ struct t {char a; char b;} x; struct t y; x.a=5; y=x; y.a; })");
+    assert(3, ({ struct t {int a; char b;} x; struct t y; x.b=3; y=x; y.b; }), "({ struct t {int a; char b;} x; struct t y; x.b=3; y=x; y.b; })");
     // Union
     assert(8, ({ union {int a; char b[6];} x; sizeof(x); }), "({ union {int a; char b[6];} x; sizeof(x); })");
     assert(3, ({ union {int a; char b[4];} x; x.a = 515; x.b[0]; }), "({ union {int a; char b[4];} x; x.a = 515; x.b[0]; })");
