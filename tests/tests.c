@@ -52,6 +52,8 @@ int foo(int *x, int y) {
 }
 
 int main() {
+    // Struct assignment
+    assert(3, ({ struct t {int a; int b;} x; struct t y; x.a=3; y=x; y.a; }), "({ struct t {int a; int b;} x; struct t y; x.a=3; y=x; y.a; })");
     // Union
     assert(8, ({ union {int a; char b[6];} x; sizeof(x); }), "({ union {int a; char b[6];} x; sizeof(x); })");
     assert(3, ({ union {int a; char b[4];} x; x.a = 515; x.b[0]; }), "({ union {int a; char b[4];} x; x.a = 515; x.b[0]; })");

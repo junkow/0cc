@@ -109,8 +109,8 @@ static void store(Type *ty) {
         //     // println("#    mov [rax+%d], sil", i);
         // }
 
-        // println("    mov rdi, [rdi]");
-        // println("    mov [rax], rdi");
+        println("    mov rdi, [rdi]");
+        println("    mov [rax], rdi");
     } else if ( ty->size == 1 ) {
         println("    mov [rax], dil"); // 1バイトの書き出し
     } else {
