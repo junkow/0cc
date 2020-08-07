@@ -64,14 +64,17 @@ static void gen_lval(Node *node) {
 }
 
 static void load(Type *ty) {
-    // If it is an array, do nothing because in general we can't load 
-    // an entire array to a register. 
-    // (The data amount is too large to store it to an register.)
-    // As a result, the result of an evalutation of
-    // an array becomes not the array itself but the address of the array.
-    // In other words, this is where
-    // "array is automatically converted to a pointer to the first element of the array in C"
-    // occurs.
+    if(ty->kind == TY_ARRAY || ty->kind == TY_STRUCT) {
+        // If it is an array, do nothing because in general we can't load 
+        // an entire array to a register. 
+        // (The data amount is too large to store it to an register.)
+        // As a result, the result of an evalutation of
+        // an array becomes not the array itself but the address of the array.
+        // In other words, this is where
+        // "array is automatically converted to a pointer to the first element of the array in C"
+        // occurs.
+        return;
+    }
 
     println("#----- Load a value from the memory address.");
     println("    pop rax"); // スタックトップからローカル変数のアドレスをpopしてraxに保存する
@@ -90,8 +93,8 @@ static void store(Type *ty) {
     println("    pop rdi"); // スタックトップの値(右辺値)をrdiにロードする
     println("    pop rax"); // スタックトップの値(アドレス)をraxにロードする
 
-    //if(ty->kind == TY_STRUCT) {
-        // println("#DEBUG: ---- TY_STRUCT\n");
+    if(ty->kind == TY_STRUCT) {
+        println("#DEBUG: ---- TY_STRUCT\n");
         // for(int i = 0; i < ty->size; i++) {
         //     /*
         //         e.g.
@@ -102,12 +105,13 @@ static void store(Type *ty) {
         //     // rdi: 変数xのアドレス(assignする値を持っている)
         //     // rax: 変数yのアドレス(assignされる側)
         //     // 1バイトずつ値をコピー?
-        //     println("#    movsx rsi, byte ptr [rdi+%d]", i);
-        //     println("#    mov [rax+%d], sil", i);
+        //     // println("#    movsx rsi, byte ptr [rdi+%d]", i);
+        //     // println("#    mov [rax+%d], sil", i);
         // }
+
         // println("    mov rdi, [rdi]");
         // println("    mov [rax], rdi");
-    if( ty->size == 1 ) {
+    } else if ( ty->size == 1 ) {
         println("    mov [rax], dil"); // 1バイトの書き出し
     } else {
         println("    mov [rax], rdi"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
@@ -140,10 +144,10 @@ static void gen(Node *node) {
     case ND_MEMBER: // structのmemberへのアクセス
         gen_addr(node);
 
-        if(node->ty->kind != TY_ARRAY)
-            load(node->ty); // メモリアドレスからデータをレジスタにload
+        load(node->ty); // メモリアドレスからデータをレジスタにload
         return;
     case ND_ASSIGN: // ローカル変数(左辺値)への値(右辺値)の割り当て
+        // gen_lvalでTY_ARRAYの場合はエラーを出力
         // 左辺のkindがTY_ARRAYではない場合のみ、左辺値として処理できる(arrayの形のままではどのアドレスに値を割り当てるかわからない)
         gen_lval(node->lhs); // =>最終的に計算結果を入れたraxの値(アドレス)がスタックにpushされる ...push rax
         gen(node->rhs); // =>最終的に計算結果を入れたraxの値(右辺値)がスタックにpushされる ...push rax
@@ -327,8 +331,7 @@ static void gen(Node *node) {
         return;
     case ND_DEREF:
         gen(node->lhs);
-        if(node->ty->kind != TY_ARRAY)
-            load(node->ty);
+        load(node->ty);
         return;
     }
 
