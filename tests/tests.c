@@ -51,7 +51,24 @@ int foo(int *x, int y) {
     return *x + y;
 }
 
+int sub_short(short a, short b, short c) {
+    return a - b - c;
+}
+
+int sub_long(long a, long b, long c) {
+    return a - b - c;
+}
+
 int main() {
+    // add short and long types
+    assert(2, ({ short c; sizeof(c); }), "({ short c; sizeof(c); })");
+    assert(4, ({ struct { char a; short b; } x; sizeof(x); }), "({ struct { char a; short b; } x; sizeof(x); })");
+
+    assert(8, ({ long c; sizeof(c); }), "({ long c; sizeof(c); })");
+    assert(16, ({ struct { char a; long b; } x; sizeof(x); }), "({ struct { char a; short b; } x; sizeof(x); })");
+
+    assert(1, ({ short a = 5; short b = 3; short c = 1; sub_short(a, b, c); }), "({ short a = 5; short b = 3; short c = 1; sub_short(a, b, c); })");
+    assert(1, ({ long a = 5; long b = 3; long c = 1; sub_long(a, b, c); }), "({ long a = 5; long b = 3; long c = 1; sub_long(a, b, c); })");
     // change the size of `int` from 8-byte to 4-byte
     // Struct assignment
     assert(3, ({ struct t {int a; int b;} x; struct t y; x.a=3; y=x; y.a; }), "({ struct t {int a; int b;} x; struct t y; x.a=5; y=x; y.a; })");
@@ -200,7 +217,7 @@ int main() {
     assert(4, ({ int x[3][4]; sizeof(**x); }), "({ int x[3][4]; sizeof(**x); })"); // 4*1
     assert(5, ({ int x[3][4]; sizeof(**x) + 1; }), "({ int x[3][4]; sizeof(**x) + 1; })");
     assert(5, ({ int x[3][4]; sizeof **x + 1; }), "({ int x[3][4]; sizeof **x + 1; })");
-    assert(4, ({ int x[3][4]; sizeof(**x + 1); }), "({ int x[3][4]; sizeof(**x + 1); })");
+    assert(8, ({ int x[3][4]; sizeof(**x + 1); }), "({ int x[3][4]; sizeof(**x + 1); })");
     // []operator
     assert(0, ({ int x[2][3]; int *y = x; y[0] = 0; x[0][0]; }), "({ int x[2][3]; int *y = x; y[0] = 0; x[0][0]; })");
     assert(1, ({ int x[2][3]; int *y = x; y[1] = 1; x[0][1]; }), "({ int x[2][3]; int *y = x; y[1] = 1; x[0][1]; })");

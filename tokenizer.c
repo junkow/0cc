@@ -160,8 +160,10 @@ static bool is_alnum(char c) {
 // If the string includes the reserved keywords returns the keyword.
 static char *is_keyword(char *p) {
     // Keywords
-    static char *kw[] = {"return", "if", "else", "while", "for", "int",
-                         "char", "sizeof", "struct", "union"};
+    static char *kw[] = {
+        "return", "if", "else", "while", "for", "int", "char", "sizeof",
+        "struct", "union", "short", "long",
+    };
 
     for(int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
         int len = strlen(kw[i]);

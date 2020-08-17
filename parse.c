@@ -261,7 +261,7 @@ Program *program(void) {
 }
 
 // baseType(Type構造体のbase propertyにあたる)を返す
-// basetype = ("char" | "int" | struct_decl | union-decl) "*"*
+// basetype = ("char" | "short" | "int" | "long" | struct_decl | union-decl) "*"*
 static Type *basetype(void) {
     if (!is_typename())
         error_tok(token, "typename expected");
@@ -271,8 +271,14 @@ static Type *basetype(void) {
     if (consume("char")) {
         ty = char_type;
     }
+    else if (consume("short")) {
+        ty = short_type;
+    }
     else if (consume("int")) {
         ty = int_type;
+    }
+    else if (consume("long")) {
+        ty = long_type;
     }
     else if (peek("struct")) {
         ty = struct_decl();
@@ -511,7 +517,7 @@ static Node *declaration(void) {
 
 // 次のtokenがtype名を表現していたら、trueを返す
 static bool is_typename(void) {
-    return ( peek("char") || peek("int") || peek("struct") || peek("union") );
+    return ( peek("char") || peek("short") || peek("int") || peek("long") || peek("struct") || peek("union") );
 }
 
 static Node *read_expr_stmt(void) {
