@@ -2,7 +2,7 @@
 
 // 複合リテラル
 Type *char_type = &(Type){TY_CHAR, 1, 1};
-Type *int_type = &(Type){TY_INT, 8, 8};
+Type *int_type = &(Type){TY_INT, 4, 4};
 
 static Type *new_type(TypeKind kind, int size, int align) {
     Type *ty = calloc(1, sizeof(Type));

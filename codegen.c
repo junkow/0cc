@@ -1,8 +1,9 @@
 #include "9cc.h"
 
 // x86_64のABIで規定されている引数をセットするレジスタのリスト(引数の順番と同じ)
-static char *argreg1[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"}; // 8bitレジスタ
-static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static char *argreg1[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"}; // 8-bitレジスタ
+static char *argreg4[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"}; // 32-bitレジスタ
+static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"}; // 64-bitレジスタ
 
 static int labelseq = 1;
 static char *funcname;
@@ -79,11 +80,16 @@ static void load(Type *ty) {
     println("#----- Load a value from the memory address.");
     println("    pop rax"); // スタックトップからローカル変数のアドレスをpopしてraxに保存する
     
-    if( ty->size == 1 )
+    if( ty->size == 1 ) {
         // movsx命令 符号拡張が不要
         println("    movsx rax, byte ptr [rax]"); // raxの指しているアドレスから1バイトの読みこみ、raxにセット
-    else
+    } else if(ty->size == 4) {
+        println("    movsxd rax, dword ptr [rax]");
+    } else {
+        assert(ty->size == 8);
         println("    mov rax, [rax]"); // raxに入っている値をアドレスとみなして、そのメモリアドレスから値をロードしてraxレジスタにコピーする
+    }
+
     println("    push rax"); // raxの値をスタックにpush
 }
 
@@ -115,7 +121,10 @@ static void store(Type *ty) {
         println("    add rsp, 8");
     } else if ( ty->size == 1 ) {
         println("    mov [rax], dil"); // 1バイトの書き出し
+    } else if ( ty->size == 4 ){
+        println("    mov [rax], edi"); // 4バイトの書き出し
     } else {
+        assert(ty->size == 8);
         println("    mov [rax], rdi"); // raxに入っている値をアドレスとみなし、そのメモリアドレスにrdiに入っている値をストア
     }
 
@@ -440,6 +449,8 @@ static void load_arg(Var *var, int idx) {
     int sz = var->ty->size;
     if(sz == 1) {
         println("    mov [rbp-%d], %s", var->offset, argreg1[idx]);
+    } else if(sz == 4) {
+        println("    mov [rbp-%d], %s", var->offset, argreg4[idx]);
     } else {
         assert(sz == 8);
         println("    mov [rbp-%d], %s", var->offset, argreg8[idx]);
