@@ -5,6 +5,10 @@
  * This is a block comment.
  */
 
+// function declaration
+int printf();
+int exit();
+
 int g1;
 int g2[4];
 

@@ -249,12 +249,15 @@ Program *program(void) {
     while(!at_eof()) {
         if ( is_function() ) {
             // Function
-            cur->next = function();
+            Function *fn = function();
+            if(!fn)
+                continue;
+            cur->next = fn;
             cur = cur->next;
-        } else {
-            // Global variable
-            global_var();
+            continue;
         }
+
+        global_var();
     }
 
     Program *prog = calloc(1, sizeof(Program));
@@ -456,7 +459,6 @@ static VarList *read_func_params(void) {
         return NULL;
 
     // ここでは関数の引数のみのリストが作成される
-
     VarList *head = read_func_param();
     VarList *cur = head;
 
@@ -469,14 +471,15 @@ static VarList *read_func_params(void) {
     return head;
 }
 
-/* "関数定義"は {...} の外側 `foo() {...}` のfoo()の部分の解析 */
-// function = basetype declarator "(" params? ")" "{" stmt* "}"
+// function = basetype declarator "(" params? ")" ("{" stmt* "}" | ";")
 // params   = param ("," param)*
 // param    = basetype declarator type-suffix
-// e.g. int foo (int bar, int foobar)
+// e.g.
+//    int foo (int bar, int foobar) { statement... } <= function definition
+//    int foo (int bar, int foobar); <= function declaration
 static Function *function() {
     locals = NULL;
-    Type *ty = basetype(); // basetypeを作成(関数の返り値の型) tokenがintでない場合のエラーチェック?
+    Type *ty = basetype(); // basetypeを作成(関数の返り値の型)
     char *name = NULL;
     declarator(ty, &name);
 
@@ -487,10 +490,16 @@ static Function *function() {
     enter_scope();
 
     fn->params = read_func_params(); // 関数の引数だけを管理しているVarList
-    expect("{");
+
+    if(consume(";")) {
+        // 関数宣言の場合
+        leave_scope();
+        return NULL;
+    }
 
     Node head = {};
     Node *cur = &head;
+    expect("{");
 
     while(!consume("}")) {
         cur->next = stmt();
