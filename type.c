@@ -67,6 +67,13 @@ Type *array_of(Type *base, int len) {
     return ty;
 }
 
+Type *func_type(Type *return_ty) {
+    Type *ty = calloc(1, sizeof(Type));
+    ty->kind = TY_FUNC;
+    ty->return_ty = return_ty;
+    return ty;
+}
+
 // nodeに型を付与する
 void add_type(Node *node) {
     if( !node || node->ty )
@@ -95,8 +102,8 @@ void add_type(Node *node) {
     case ND_NE:
     case ND_LT:
     case ND_LE:
-    case ND_FUNCALL:
     case ND_NUM:
+    case ND_FUNCALL:
         node->ty = long_type;
         return;
     case ND_PTR_ADD:   // ptr + num or num + ptr

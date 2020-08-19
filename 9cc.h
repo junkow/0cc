@@ -42,6 +42,7 @@ struct Token {
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
 void error_tok(Token *tok, char *fmt, ...);
+void warn_tok(Token *tok, char *fmt, ...);
 Token *peek(char *s);
 Token *consume(char *op);
 Token *consume_ident(void);
@@ -174,12 +175,13 @@ Program *program(void);
 // type.c
 //
 
-typedef enum { 
+typedef enum {
     TY_CHAR,
     TY_SHORT,
     TY_INT,
     TY_LONG,
     TY_PTR,
+    TY_FUNC,
     TY_ARRAY,
     TY_STRUCT,
 } TypeKind;
@@ -191,6 +193,7 @@ struct Type {
     Type *base;
     int array_len;
     Member *members; // struct
+    Type *return_ty; // function
 };
 // e.g.
 // int a[2];と宣言した場合
@@ -215,6 +218,7 @@ bool is_integer(Type *ty);
 int align_to(int n, int align);
 Type *pointer_to(Type *base);
 Type *array_of(Type *base, int len);
+Type *func_type(Type *return_ty);
 void add_type(Node *node);
 
 //

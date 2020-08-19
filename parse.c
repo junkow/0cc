@@ -107,12 +107,12 @@ static Node *new_node_num(long value, Token *tok) {
     return node;
 }
 
+// scopeインスタンスを作成して、リストにつなげる
 static VarScope *push_scope(char *name, Var *var) {
     VarScope *sc = calloc(1, sizeof(VarScope));
     sc->name = name;
     sc->var = var;
     sc->depth = scope_depth;
-    // scopeインスタンスを作成して、リストにつなげる
     sc->next = var_scope;
     // var_scope変数はリストの先頭を指している
     var_scope = sc;
@@ -228,8 +228,8 @@ static bool is_function(void) {
 // global変数
 // global-var = basetype ident ("[" num "]")* ";"
 // TODO: あとで実装したい
-// gvar = basetype ident ("[" num "]")* ";"
 // global-var = gvar ( "," gvar )* ";"
+// gvar = basetype ident ("[" num "]")* ";"
 static void global_var(void) {
     Type *basety = basetype();
     Type *ty;
@@ -247,8 +247,8 @@ Program *program(void) {
     globals = NULL; // globals変数を初期化
 
     while(!at_eof()) {
+        // Function
         if ( is_function() ) {
-            // Function
             Function *fn = function();
             if(!fn)
                 continue;
@@ -257,12 +257,13 @@ Program *program(void) {
             continue;
         }
 
+        // Global variable
         global_var();
     }
 
     Program *prog = calloc(1, sizeof(Program));
     prog->globals = globals;
-    prog->fns =  head.next;
+    prog->fns = head.next;
 
     return prog;
 }
@@ -315,16 +316,14 @@ static Type *declarator(Type *ty, char **name) {
     return type_suffix(ty);
 }
 
-// type-suffix = "(" func-params
-//             | "[" num "]" type-suffix
-//             | ε
+// type-suffix = "[" num "]" type-suffix | ε
 // 配列ならbaseを設定して、arrayのTypeインスタンスを返す、それ以外ならbaseをそのまま返す
 static Type *type_suffix(Type *ty) {
     if(!consume("["))
         return ty;
     int sz = expect_number();
     expect("]");
-    
+
     ty = type_suffix(ty); // 再起的に関数を呼ぶだけで配列の配列を実装できる!
 
     return array_of(ty, sz);
@@ -479,10 +478,17 @@ static VarList *read_func_params(void) {
 //    int foo (int bar, int foobar); <= function declaration
 static Function *function() {
     locals = NULL;
+
     Type *ty = basetype(); // basetypeを作成(関数の返り値の型)
     char *name = NULL;
-    declarator(ty, &name);
+    ty = declarator(ty, &name);
 
+    // 関数の戻り値の型を、scopeに繋げる
+    // new_varの中のpush_scope関数でvar_scopeのリストに繋げる
+    // local変数ではないので、第三引数はfalse
+    new_var(name, func_type(ty), false);
+
+    // Construct a function body
     Function *fn = calloc(1, sizeof(Function));
     fn->name = name;
     expect("(");
@@ -497,6 +503,7 @@ static Function *function() {
         return NULL;
     }
 
+    // Read function body
     Node head = {};
     Node *cur = &head;
     expect("{");
@@ -516,6 +523,7 @@ static Function *function() {
 
 // 文
 // declaration = basetype declarator type_suffix ("=" expr)? ";"
+// TODO: declaratorに含まれているので、ここのtype_suffixいらない?
 //             | basetype ";"
 /*
     e.g.
@@ -537,7 +545,8 @@ static Node *declaration(void) {
 
     char *name = NULL;
     ty = declarator(ty, &name);
-    ty = type_suffix(ty);
+    // DEBUG
+    // ty = type_suffix(ty);
     Var *var = new_lvar(name, ty);
 
     if(consume(";"))
@@ -988,6 +997,18 @@ static Node *primary(void) {
             Node *node = new_node(ND_FUNCALL, tok);
             node->funcname = strndup(tok->str, tok->len);
             node->args = func_args();
+            add_type(node);
+
+            Var *var = find_var(tok);
+            if(var) {
+                if(var->ty->kind != TY_FUNC)
+                    error_tok(tok, "not a function");
+                node->ty = var->ty->return_ty;
+            } else {
+                warn_tok(node->tok, "implicit declaration of a function");
+                node->ty = int_type;
+            }
+
             return node;
         }
 
@@ -1010,7 +1031,7 @@ static Node *primary(void) {
 
         Type *ty = array_of(char_type, tok->cont_len); // base type はchar型, 長さは文字列の長さ分
         Var *var = new_gvar(new_label(), ty); // nameは型はarray
-        // new_gvar()のなかで、varはscopeに関連づけられ、リストに連結されていく
+        // new_gvar()のなかで、varはvar_scopeに関連づけられ、さらにVarList globalsに連結される
 
         var->contents = tok->contents;
         var->cont_len = tok->cont_len;

@@ -63,8 +63,18 @@ int sub_long(long a, long b, long c) {
     return a - b - c;
 }
 
+int *g1_ptr() {
+    return &g1;
+}
+
 int main() {
+    assert(0, g1, "g1");
+    g1=3;
+    // a return type to a function
+    assert(3, *g1_ptr(), "g1_ptr()");
     // nested type declarators
+    assert(8, ({ int (*x)[3][4]; sizeof(x); }), "({ int (*x)[3][4]; sizeof(x); })");
+    assert(96, ({ int *x[3][4]; sizeof(x); }), "({ int *x[3][4]; sizeof(x); })");
     assert(8, ({ int (*x)[3]; sizeof(x); }), "({ int (*x)[3]; sizeof(x); })");
     assert(24, ({ int *x[3]; sizeof(x); }), "({ int *x[3]; sizeof(x); })");
     assert(3, ({ int *x[3]; int y; x[0] = &y; y=3; x[0][0]; }), "({ int *x[3]; int y; x[0] = &y; y=3; x[0][0]; })");
@@ -195,8 +205,6 @@ int main() {
     // char
     assert(1, ({ char x=1; x; }), "({ char x=1; x; })");
     // global variable
-    assert(0, g1, "g1");
-    g1=3;
     assert(3, g1, "g1");
 
     g2[0] = 0; g2[1] = 1; g2[2] = 2; g2[3] = 3;
