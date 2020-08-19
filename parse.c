@@ -522,8 +522,7 @@ static Function *function() {
 }
 
 // 文
-// declaration = basetype declarator type_suffix ("=" expr)? ";"
-// TODO: declaratorに含まれているので、ここのtype_suffixいらない?
+// declaration = basetype declarator ("=" expr)? ";"
 //             | basetype ";"
 /*
     e.g.
@@ -545,8 +544,6 @@ static Node *declaration(void) {
 
     char *name = NULL;
     ty = declarator(ty, &name);
-    // DEBUG
-    // ty = type_suffix(ty);
     Var *var = new_lvar(name, ty);
 
     if(consume(";"))
