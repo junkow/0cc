@@ -68,9 +68,11 @@ int *g1_ptr() {
 }
 
 int main() {
+    // add void type
+    { void *x; }
+    // a return type to a function
     assert(0, g1, "g1");
     g1=3;
-    // a return type to a function
     assert(3, *g1_ptr(), "g1_ptr()");
     // nested type declarators
     assert(8, ({ int (*x)[3][4]; sizeof(x); }), "({ int (*x)[3][4]; sizeof(x); })");

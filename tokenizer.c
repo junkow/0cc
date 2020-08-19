@@ -169,7 +169,7 @@ static char *is_keyword(char *p) {
     // Keywords
     static char *kw[] = {
         "return", "if", "else", "while", "for", "int", "char", "sizeof",
-        "struct", "union", "short", "long",
+        "struct", "union", "short", "long", "void"
     };
 
     for(int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {

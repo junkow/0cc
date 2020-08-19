@@ -269,25 +269,27 @@ Program *program(void) {
 }
 
 // baseType(Type構造体のbase propertyにあたる)を返す
-// basetype = "char" | "short" | "int" | "long" | struct_decl | union-decl
+// basetype = "void" | "char" | "short" | "int" | "long" | struct_decl | union-decl
 static Type *basetype(void) {
-
+    if (consume("void")) {
+        return void_type;
+    }
     if (consume("char")) {
         return char_type;
     }
-    else if (consume("short")) {
+    if (consume("short")) {
         return short_type;
     }
-    else if (consume("int")) {
+    if (consume("int")) {
         return int_type;
     }
-    else if (consume("long")) {
+    if (consume("long")) {
         return long_type;
     }
-    else if (peek("struct")) {
+    if (peek("struct")) {
         return struct_decl();
     }
-    else if (peek("union")) {
+    if (peek("union")) {
         return union_decl();
     }
 
@@ -481,7 +483,7 @@ static Function *function() {
 
     Type *ty = basetype(); // basetypeを作成(関数の返り値の型)
     char *name = NULL;
-    ty = declarator(ty, &name);
+    ty = declarator(ty, &name); // この関数内でnameが設定される
 
     // 関数の戻り値の型を、scopeに繋げる
     // new_varの中のpush_scope関数でvar_scopeのリストに繋げる
@@ -544,6 +546,11 @@ static Node *declaration(void) {
 
     char *name = NULL;
     ty = declarator(ty, &name);
+
+    // 宣言がvoid型の場合
+    if(ty->kind == TY_VOID)
+        error_tok(tok, "variable declared void");
+
     Var *var = new_lvar(name, ty);
 
     if(consume(";"))
@@ -560,7 +567,8 @@ static Node *declaration(void) {
 
 // 次のtokenがtype名を表現していたら、trueを返す
 static bool is_typename(void) {
-    return ( peek("char") || peek("short") || peek("int") || peek("long") || peek("struct") || peek("union") );
+    return ( peek("void") || peek("char") || peek("short") || peek("int") || peek("long") ||
+            peek("struct") || peek("union") );
 }
 
 static Node *read_expr_stmt(void) {
