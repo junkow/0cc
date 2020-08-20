@@ -8,6 +8,7 @@
 // function declaration
 int printf();
 int exit();
+int queenssol8();
 
 int g1;
 int g2[4];
@@ -68,6 +69,14 @@ int *g1_ptr() {
 }
 
 int main() {
+    assert(3, ({ int *x[3]; int y; x[1] = &y; y=3; *x[1]; }), "({ int *x[3]; int y; x[1] = &y; y=3; *x[1]; })");
+    assert(3, ({ int *x[3]; int y; x[1] = &y; y=3; x[1][0]; }), "({ int *x[3]; int y; x[1] = &y; y=3; x[1][0]; })");
+    assert(12, ({ int x[3]; char y[4]; &y - &x; }), "({ int x[3]; char y[4]; &y - &x; })");
+    assert(1, ({ char y[4]; int x[3]; &x - &y; }), "({ char y[4]; int x[3]; &x - &y; })");
+    assert(1, ({ char y[4]; int x[2]; &x - &y; }), "({ char y[4]; int x[2]; &x - &y; })");
+    assert(7, ({ int x; char y; int a = &x; int b = &y; b - a; }), "({ int x; char y; int a = &x; int b = &y; b - a; })");
+    assert(3, ({ char y[3]; int x; int a = &y; int b = &x; b - a; }), "({ char y[3]; int x; int a = &y; int b = &x; b - a; })");
+    assert(1, ({ char y; int x; int a = &y; int b = &x; b - a; }), "({ char y; int x; int a = &y; int b = &x; b - a; })");
     // add void type
     { void *x; }
     // a return type to a function
@@ -116,7 +125,7 @@ int main() {
     assert(3, ({ struct t {int x;}; int t=1; struct t y; y.x=2; t + y.x; }), "({ struct t {int x;}; int t=1; struct t y; y.x=2; t + y.x; })");
     // align local variables
     assert(7, ({int x; char y; int a = &x; int b = &y; b-a;}), "({int x; char y; int a = &x; int b = &y; b-a;})");
-    assert(1, ({char x; int y; int a = &x; int b = &y; b-a;}), "({int x; char y; int a = &x; int b = &y; b-a;})");
+    assert(1, ({char x; int y; int a = &x; int b = &y; b-a;}), "({char x; int y; int a = &x; int b = &y; b-a;})");
     // Struct(align members)
     assert(2, ({int x[5]; int *y = x+2; y-x;}), "({int x[5]; int *y = x+2; y-x;})");
  
@@ -276,7 +285,7 @@ int main() {
     // assert(3, ({ int x = 3; int y = &x; int z = &y; **z; }), "({ int x = 3; int y = &x; int z = &y; **z; })");　// このままだとinvalid pointer dereferenceのエラーになる
     // ポインタを代入する場合は*を変数名の前に付与する
     assert(3, ({ int x = 3; int *y = &x; int **z = &y; **z; }), "({ int x = 3; int *y = &x; int **z = &y; **z; })"); // **はポインタのポインタ
-    // アドレスの演算は、実際には(x*8)している
+    // アドレスの演算は、実際には(x * ty->base->size)している
     assert(5, ({ int x = 3; int y = 5; *(&x + 1); }), "({ int x = 3; int y = 5; *(&x + 1); })");
     assert(3, ({ int x = 3; int y = 5; *(&y - 1); }), "({ int x = 3; int y = 5; *(&y - 1); })");
     assert(22, ({ int x = 3; int y = 5; int z = 22; *(&x + 2); }), "({ int x = 3; int y = 5; int z = 22; *(&x + 2); })");
@@ -333,10 +342,12 @@ int main() {
     assert(3, ({ 3; }), "({ 3; })");
     assert(5, ({ 5; }), "({ 5; })");
     assert(3, ({1; 2; 3;}), "({1; 2; 3;})");
+
     // 以下3個はエラー
     // assert(2, ({1; return 2; 3;}), "({1; return 2; 3;})"); // Error 2
     // assert(1, ({return 1; 2; 3;}), "({return 1; 2; 3;})"); // Error 1
     // assert(3, ({1; 2; return 3;}), "({1; 2; return 3;})"); // stmt-expr returning void is not supported
+
     // ture: 1, false: 0
     assert(1, 0!=1,  "0!=1");
     assert(0, 42!=42, "42!=42");
