@@ -766,8 +766,8 @@ static Node *new_add(Node *lhs, Node *rhs, Token *tok) {
     //     rhs = tmp;
     // }
 
-    // // rhs(numのnode)をlhs->ty->base->size(ポインタのサイズ)にスケールした値にする
-    // // これだとrhs->tyがintegerである保証がない??
+    // rhs(numのnode)をlhs->ty->base->size(ポインタのサイズ)にスケールした値にする
+    // これだとrhs->tyがintegerである保証がない??
     // rhs = new_binary(ND_MUL, rhs, new_node_num(lhs->ty->base->size, tok), tok);
     // return new_binary(ND_ADD, lhs, rhs, tok);
 }
@@ -783,18 +783,17 @@ static Node *new_sub(Node *lhs, Node *rhs, Token *tok) {
         return new_binary(ND_SUB, lhs, rhs, tok);
 
     // ptr - num
-    // if(lhs->ty->base && is_integer(rhs->ty))
+    if(lhs->ty->base && is_integer(rhs->ty))
+        return new_binary(ND_PTR_SUB, lhs, rhs, tok);
     //     rhs = new_binary(ND_MUL, rhs, new_node_num(lhs->ty->base->size, tok), tok);
     //     return new_binary(ND_SUB, lhs, rhs, tok);
-    return new_binary(ND_PTR_SUB, lhs, rhs, tok);
 
     // ptr - ptr, which returns how many elements are between the two.
-    // if(lhs->ty->base && rhs->ty->base) {
+    if(lhs->ty->base && rhs->ty->base) {
+        return new_binary(ND_PTR_DIFF, lhs, rhs, tok);
     //     Node *node = new_binary(ND_SUB, lhs, rhs, tok);
     //     return new_binary(ND_DIV, node, new_node_num(lhs->ty->base->size, tok), tok);
-    // }
-
-    return new_binary(ND_PTR_DIFF, lhs, rhs, tok);
+    }
 
     error_tok(tok, "invalid operands");
 }
