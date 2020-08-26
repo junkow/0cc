@@ -387,8 +387,8 @@ static void gen(Node *node) {
         // 被除数(この場合はraxの値)をセット
         println("    sub rax, rdi"); // rax = rax - rdi
         println("    cqo");          // rax => (RDX:RAX)
-        println("    mov rdi, %d", node->lhs->ty->base->size);   // 8をrdiにコピーする
-        println("    idiv rdi");     // divide rax by rdi(=8)(引き算の結果は欲しい結果の8倍の値なので)
+        println("    mov rdi, %d", node->lhs->ty->base->size);   // スケール用の値(ty->base->size)をrdiにコピーする
+        println("    idiv rdi");     // divide rax by rdi(=ty->base->size)(引き算の結果は欲しい結果の(ty->base->size)倍の値なので)
         // 欲しい結果はraxにセットされている
         break;
     case ND_MUL:

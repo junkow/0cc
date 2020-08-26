@@ -746,13 +746,30 @@ static Node *new_add(Node *lhs, Node *rhs, Token *tok) {
     // num + num
     if(is_integer(lhs->ty) && is_integer(rhs->ty))
         return new_binary(ND_ADD, lhs, rhs, tok);
+
+    // ptr + ptr => error
+    if(lhs->ty->base && rhs->ty->base)
+        error_tok(tok, "invalid operands");
+
     // ptr + num
     if(lhs->ty->base && is_integer(rhs->ty))
         return new_binary(ND_PTR_ADD, lhs, rhs, tok);
+
     if(is_integer(lhs->ty) && rhs->ty->base)
         return new_binary(ND_PTR_ADD, rhs, lhs, tok);
 
-    error_tok(tok, "invalid operands");
+    // Canonicalize `num + ptr` to `ptr + num`.
+    // if(!lhs->ty->base && rhs->ty->base) {
+    //     // もし、lhsがポインタではなく(整数)、rhsがポインタの場合、lhsとrhsを入れ替える
+    //     Node *tmp = lhs;
+    //     lhs = rhs;
+    //     rhs = tmp;
+    // }
+
+    // // rhs(numのnode)をlhs->ty->base->size(ポインタのサイズ)にスケールした値にする
+    // // これだとrhs->tyがintegerである保証がない??
+    // rhs = new_binary(ND_MUL, rhs, new_node_num(lhs->ty->base->size, tok), tok);
+    // return new_binary(ND_ADD, lhs, rhs, tok);
 }
 
 // `-`演算子を、pointer型の計算の場合はoverloadするように、値をscalingする
@@ -764,12 +781,20 @@ static Node *new_sub(Node *lhs, Node *rhs, Token *tok) {
     // num - num
     if(is_integer(lhs->ty) && is_integer(rhs->ty))
         return new_binary(ND_SUB, lhs, rhs, tok);
+
     // ptr - num
-    if(lhs->ty->base && is_integer(rhs->ty))
-        return new_binary(ND_PTR_SUB, lhs, rhs, tok);
+    // if(lhs->ty->base && is_integer(rhs->ty))
+    //     rhs = new_binary(ND_MUL, rhs, new_node_num(lhs->ty->base->size, tok), tok);
+    //     return new_binary(ND_SUB, lhs, rhs, tok);
+    return new_binary(ND_PTR_SUB, lhs, rhs, tok);
+
     // ptr - ptr, which returns how many elements are between the two.
-    if(lhs->ty->base && rhs->ty->base)
-        return new_binary(ND_PTR_DIFF, lhs, rhs, tok);
+    // if(lhs->ty->base && rhs->ty->base) {
+    //     Node *node = new_binary(ND_SUB, lhs, rhs, tok);
+    //     return new_binary(ND_DIV, node, new_node_num(lhs->ty->base->size, tok), tok);
+    // }
+
+    return new_binary(ND_PTR_DIFF, lhs, rhs, tok);
 
     error_tok(tok, "invalid operands");
 }

@@ -129,8 +129,7 @@ void add_type(Node *node) {
             node->ty = pointer_to(node->lhs->ty);  // array以外ならnode->lhs->tyがそのbaseにあたる
         return;
     case ND_DEREF:     // unary * (単項, 逆参照)
-        // if (node->lhs->ty->kind != TY_PTR) // 左辺値の型のkindがTY_PTRでない場合はエラー
-        if(!node->lhs->ty->base) // 左辺値の型にbaseの型が指定されていなければエラー たとえばint型にbaseは指定されていない
+        if(!node->lhs->ty->base) // 左辺値の型にbaseの型が指定されていなければエラー(たとえばint型にbaseは指定されていない)
             error_tok(node->tok, "invalid pointer dereference");
         node->ty = node->lhs->ty->base;
         if(node->ty->kind == TY_VOID)
