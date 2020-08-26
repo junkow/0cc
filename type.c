@@ -131,9 +131,10 @@ void add_type(Node *node) {
     case ND_DEREF:     // unary * (単項, 逆参照)
         if(!node->lhs->ty->base) // 左辺値の型にbaseの型が指定されていなければエラー(たとえばint型にbaseは指定されていない)
             error_tok(node->tok, "invalid pointer dereference");
-        node->ty = node->lhs->ty->base;
-        if(node->ty->kind == TY_VOID)
+        if(node->lhs->ty->base->kind == TY_VOID)
             error_tok(node->tok, "dereferencing a void pointer");
+
+        node->ty = node->lhs->ty->base;
         return;
     case ND_STMT_EXPR: {
         Node *last = node->body;
