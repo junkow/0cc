@@ -137,10 +137,10 @@ void add_type(Node *node) {
         node->ty = node->lhs->ty->base;
         return;
     case ND_STMT_EXPR: {
-        Node *last = node->body;
-        while (last->next)
-            last = last->next;
-        node->ty = last->ty; // nodeの型は最後の式の型に指定
+        Node *stmt = node->body;
+        while (stmt->next)
+            stmt = stmt->next;
+        node->ty = stmt->ty; // nodeの型は最後の式の型に指定
         return;
     }
     }
