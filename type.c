@@ -96,9 +96,12 @@ void add_type(Node *node) {
     switch(node->kind) {
     case ND_ADD:
     case ND_SUB:
-    case ND_PTR_DIFF:
+    // case ND_PTR_DIFF:
     case ND_MUL:
     case ND_DIV:
+    case ND_ASSIGN:    // = : assign
+        node->ty = node->lhs->ty; // 左辺値の型がnodeの型になる
+        return;
     case ND_EQ:
     case ND_NE:
     case ND_LT:
@@ -107,11 +110,11 @@ void add_type(Node *node) {
     case ND_FUNCALL:
         node->ty = long_type;
         return;
-    case ND_PTR_ADD:   // ptr + num or num + ptr
-    case ND_PTR_SUB:   // ptr - num or num - ptr
-    case ND_ASSIGN:    // = : assign
-        node->ty = node->lhs->ty; // 左辺値の型がnodeの型になる
-        return;
+    // case ND_PTR_ADD:   // ptr + num or num + ptr
+    // case ND_PTR_SUB:   // ptr - num or num - ptr
+    // case ND_ASSIGN:    // = : assign
+    //     node->ty = node->lhs->ty; // 左辺値の型がnodeの型になる
+    //     return;
     case ND_VAR:
         node->ty = node->var->ty;
         return;
